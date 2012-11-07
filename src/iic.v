@@ -58,7 +58,7 @@ reg	write_command;
 reg	flag_iic_fail;
 reg	fail;
 reg	fail2;
-reg	[9:0] cnt_20us;		//statement change recycle
+reg	[8:0] cnt_20us;		//statement change recycle
 reg	iic_sda_out;
 reg	iic_scl_out;
 reg	[2:0] iic_cnt;		//iic timer,use to clock out&in data(8 bits data)
@@ -182,7 +182,7 @@ always @ (posedge clk or negedge rst_n)
 			  cnt_20us<=ZERO;
 			  clk_100khz<=1'b0;
 		  end
-		else if (cnt_20us==10'b101001101)
+		else if (cnt_20us==9'b101001101)
 			begin
 			  cnt_20us<=ZERO;
 			  clk_100khz<=~clk_100khz;
