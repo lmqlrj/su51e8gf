@@ -1,6 +1,8 @@
 change log
 
 
+2010.12.19  rename leddetect.v to leddriver.v.
+
 release version 002
 
 2010.10.12  iic.v: add 2-byte-operation mode for copper sfp interface.
