@@ -23,7 +23,8 @@ module iic(
 	//clk1m,
 	sda,		//IIC1 sda signal
 	scl,		//IIC1 scl signal
-	software_wp     //eeprom write protect signal
+	software_wp,     //eeprom write protect signal
+	two_bytes    //two-byte operation select, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
 	);
 
 input	clk;
@@ -32,11 +33,12 @@ input	rst_n;
 input	[6:0] dev_id;
 input	[1:0] command;
 input	[7:0] add;
-input	[7:0] data_out;
+input	[15:0] data_out;    //two-byte write, mod by lumeiquan@2010-9-24
 input	software_wp;
+input two_bytes;    //two-byte operation select, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
 output	fail;
 output	busy;
-output	[7:0] data_in;
+output	[15:0] data_in;    //two-byte read, mod by lumeiquan@2010-9-24
 
 output	scl;
 inout	sda;
@@ -44,10 +46,11 @@ inout	sda;
 
 wire	sda;
 wire	scl;
-wire	[7:0] data_out;
+wire	[15:0] data_out;    //two-byte write, mod by lumeiquan@2010-9-24
 wire	iic_sda_in;		//read in signal
+wire [7:0] data_out_select;    //select high or low byte to output, mod by lumeiquan@2010-9-24
 
-reg	[7:0] data_in;
+reg	[15:0] data_in;    //two-byte read, mod by lumeiquan@2010-9-24
 reg	read_command;
 reg	write_command;
 reg	flag_iic_fail;
@@ -63,6 +66,8 @@ reg	sda_delay;
 reg	[5:0] next_state;
 reg	[5:0] current_state;
 reg [4:0] prescl_cnt;
+reg sixteen_bits;    //two bytes read or write flag, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
+reg [7:0] data_in_reg;    //temperory reg for data from IIC device, mod by lumeiquan@2010-9-24
 
 
 parameter	YES=1'b1;
@@ -77,6 +82,9 @@ parameter	START=5'h16;
 
 parameter   PRESTART_WL=5'h17;
 parameter	PRESTART_WH=5'h18;
+
+parameter	FRDATAACK_H=5'h19;     //mod by lumeiquan@20101012
+parameter	FRDATA_WL=5'h1a;       //mod by lumeiquan@20101012
 
 parameter	CHIPADDR_WL=5'h00;		//L mean scl to be 0;
 parameter	CHIPADDR_WH=5'h01;		//H mean scl to be 1;
@@ -114,6 +122,7 @@ assign	busy=write_command | read_command | command_over;
 assign	sda=(sda_delay==LOW) ? LOW : 1'bz;
 assign	scl=(iic_scl_out==LOW) ? LOW : 1'b1;
 assign	iic_sda_in = sda;
+assign  data_out_select = (sixteen_bits==1'b0)?data_out[7:0]:data_out[15:8];    //select high or low byte to output, mod by lumeiquan@2010-9-24
 
 
 
@@ -188,7 +197,7 @@ always @ (posedge clk or negedge rst_n)
 
 
 always @ (current_state or read_command or write_command or iic_cnt or iic_restart or iic_sda_in or command
-			or prescl_cnt)
+			or prescl_cnt or two_bytes or sixteen_bits)
 	begin
 		case (current_state)
 			PRESTART_WL:
@@ -315,7 +324,14 @@ always @ (current_state or read_command or write_command or iic_cnt or iic_resta
 
 			WDATAACK_WH:
 				begin
-					next_state=OPERATE_OVER;
+				  if((two_bytes==1'b1)&&(sixteen_bits==1'b1))    //mod begin by lumeiquan@2010-9-24
+					  begin
+					    next_state=WDATA_WL;
+					  end
+					else
+					  begin
+					    next_state=OPERATE_OVER;
+					  end                                          //mod end by lumeiquan@2010-9-24
 				end
 
 			OPERATE_OVER:
@@ -372,17 +388,34 @@ always @ (current_state or read_command or write_command or iic_cnt or iic_resta
 
 			RDATAACK_WL:
 				begin
-					next_state=RDATAACK_WH;
+	        if((two_bytes==1'b1)&&(sixteen_bits==1'b0))                 //mod begin by lumeiquan@20101012
+	          begin
+	            next_state=FRDATAACK_H;
+	          end
+	        else
+				    begin                                                     //mod end by lumeiquan@20101012
+					    next_state=RDATAACK_WH;
+				    end
 				end
 
+      FRDATAACK_H:                                                    //mod begin by lumeiquan@20101012
+        begin
+          next_state=FRDATA_WL;
+        end                                                           //mod end by lumeiquan@20101012
+
+      FRDATA_WL:
+      begin
+        next_state=RDATA_WH;
+      end                                                             //mod end by lumeiquan@20101012
+
 			RDATAACK_WH:
-				begin
-					next_state=OPERATE_OVER;
+			  begin                           
+				  next_state=OPERATE_OVER;
 				end
 
 			PAUSE:
 				begin
-					next_state=IDLE;
+          next_state=IDLE;
 				end
 
 			IDLE:
@@ -413,6 +446,8 @@ always @ (posedge clk or negedge rst_n)
 				flag_iic_fail<=NO;
 				iic_restart<=NO;
 				prescl_cnt<=ZERO;
+				sixteen_bits<=ZERO;    //default one-byte operation, mod by lumeiquan@2010-9-24
+				data_in_reg<=ZERO;    //default one-byte operation, mod by lumeiquan@2010-9-24
 			end
 		else if (cnt_20us==ZERO)
 			begin
@@ -542,7 +577,7 @@ always @ (posedge clk or negedge rst_n)
 									begin
 										if (iic_sda_in==LOW)
 											begin
-												iic_sda_out<=data_out[7];
+												iic_sda_out<=data_out_select[7];//mod by lumeiquan@2010-9-24
 											end
 										else
 											begin
@@ -550,13 +585,13 @@ always @ (posedge clk or negedge rst_n)
 												flag_iic_fail<=YES;
 											end
 									end
-								3'b001:	iic_sda_out<=data_out[6];
-								3'b010:	iic_sda_out<=data_out[5];
-								3'b011:	iic_sda_out<=data_out[4];
-								3'b100:	iic_sda_out<=data_out[3];
-								3'b101:	iic_sda_out<=data_out[2];
-								3'b110:	iic_sda_out<=data_out[1];
-								3'b111:	iic_sda_out<=data_out[0];
+								3'b001:	iic_sda_out<=data_out_select[6];//mod by lumeiquan@2010-9-24
+								3'b010:	iic_sda_out<=data_out_select[5];//mod by lumeiquan@2010-9-24
+								3'b011:	iic_sda_out<=data_out_select[4];//mod by lumeiquan@2010-9-24
+								3'b100:	iic_sda_out<=data_out_select[3];//mod by lumeiquan@2010-9-24
+								3'b101:	iic_sda_out<=data_out_select[2];//mod by lumeiquan@2010-9-24
+								3'b110:	iic_sda_out<=data_out_select[1];//mod by lumeiquan@2010-9-24
+								3'b111:	iic_sda_out<=data_out_select[0];//mod by lumeiquan@2010-9-24
 								default:;
 							endcase
 						end
@@ -574,6 +609,14 @@ always @ (posedge clk or negedge rst_n)
 						begin
 							iic_scl_out<=LOW;
 							iic_sda_out<=HIGH_Z;
+							if((two_bytes==1'b1)&&(sixteen_bits==1'b0))    //mod begin by lumeiquan@2010-9-24
+							  begin
+							    sixteen_bits<=1'b1;
+							  end
+							else
+							  begin
+							    sixteen_bits<=1'b0;
+							  end                                           //mod end by lumeiquan@2010-9-24
 						end
 
 					WDATAACK_WH:
@@ -626,20 +669,22 @@ always @ (posedge clk or negedge rst_n)
 								3'b000:
 									begin
 										if (iic_sda_in==LOW)
-											 ;
+										  begin                            
+											  ;
+											end                              
 										else
 											begin
 												flag_iic_fail<=YES;
 												iic_sda_out<=LOW;
 											end
 									end
-								3'b001:	data_in[7]<=iic_sda_in;
-								3'b010:	data_in[6]<=iic_sda_in;
-								3'b011:	data_in[5]<=iic_sda_in;
-								3'b100:	data_in[4]<=iic_sda_in;
-								3'b101:	data_in[3]<=iic_sda_in;
-								3'b110:	data_in[2]<=iic_sda_in;
-								3'b111:	data_in[1]<=iic_sda_in;
+								3'b001:	data_in_reg[7]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b010:	data_in_reg[6]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b011:	data_in_reg[5]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b100:	data_in_reg[4]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b101:	data_in_reg[3]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b110:	data_in_reg[2]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
+								3'b111:	data_in_reg[1]<=iic_sda_in;    //mod by lumeiquan@2010-9-24
 							endcase
 							iic_scl_out<=LOW;
 						end
@@ -656,12 +701,34 @@ always @ (posedge clk or negedge rst_n)
 					RDATAACK_WL:
 						begin
 							iic_scl_out<=LOW;
-							data_in[0]<=iic_sda_in;
+							data_in_reg[0]<=iic_sda_in;                  //mod by lumeiquan@2010-9-24
+							if((two_bytes==1'b1)&&(sixteen_bits==1'b0))  //mod begin by lumeiquan@20101012
+							  begin
+							    iic_sda_out<=LOW;
+							  end
+							else
+							  begin
+							    sixteen_bits<=sixteen_bits;
+							  end                                        //mod end by lumeiquan@20101012
 						end
+
+						FRDATAACK_H:                                   //mod begin by lumeiquan@20101012
+              begin
+                iic_scl_out<=HIGH_Z;
+                sixteen_bits<=1'b1;
+                data_in[15:8]<=data_in_reg;
+              end                                          
+
+            FRDATA_WL:
+              begin
+                iic_scl_out<=LOW;
+                iic_sda_out<=HIGH_Z;
+              end                                          //mod end by lumeiquan@20101012
 
 					RDATAACK_WH:
 						begin
 							iic_scl_out<=HIGH_Z;
+							data_in[7:0]<=data_in_reg;                   //mod by lumeiquan@20101012
 						end
 
 					PAUSE:
@@ -674,6 +741,14 @@ always @ (posedge clk or negedge rst_n)
 							iic_sda_out<=HIGH_Z;
 							iic_restart<=NO;
 							command_over<=YES;
+							if((two_bytes==1'b1)&&(sixteen_bits==1'b1))   //mod begin by lumeiquan@2010-9-24
+							  begin
+							    sixteen_bits<=1'b0;
+							  end
+							else
+							  begin
+							    sixteen_bits<=sixteen_bits;
+							  end                                         //mod end by lumeiquan@2010-9-24
 						end
 
 					default:
