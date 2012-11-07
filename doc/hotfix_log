@@ -2,6 +2,48 @@ hotfix log
 
 
 
+2011.1.8    local_bus: bugfix #900101: probabilistic appearance that write data failed.
+
+                       <--- skew between x and y -->
+                    ________________________
+                   |                        |
+                   |    __________          |       _____________
+                   |   |          | we_dly  -------|             |
+     we  __________|___|x         |________________|y            |  we rises asynchronizely,
+                       |  delay   |                |  write_block|  write when we_y=1 and we_dly=0,
+     clk ______________|          |         _______|             |  but the state combination dosen't accur
+                   |   |__________|        |       |_____________|  as we rises just before clk at x but after at y.
+                   |_______________________|
+
+                     ______________________________                              ______________________________
+                    |                              |                            |                              |
+                    |                              |                            |                              |
+                    |                              |                            |                              |
+clk_________________|                              |____________________________|                              |
+
+                     __________________________________________________________________________________________
+                    |                              
+    just before clk->                             
+                    |                            
+we x________________|                           
+
+                       _______________________________________________________________________________________
+                      |                              
+                   -> |<-delay by block switch time 
+                      |                            
+we_dly  ______________|                           
+
+                      ________________________________________________________________________________________
+                     |                           
+                     |<-delay by skew y-x       
+                     |                         
+we y_________________|                        
+
+fix: keep the asynchronized input signals within combination block only, don not use them in the conditional expression in sequencial block.
+instead, synchronize them by clk shifting, and take the trimmed version.
+in this case, trim we input by 2 cascading clock-cycle-delay, get we_dly0 and we_dly1, synchronized by clk capturing the rising edge of we.
+by the way, only clk and rst relavant signal can be in the always sense list.
+
 2010.12.18  local_bus: bugfix #900100: during local bus writing to a single bit of TXDIS register, other bit(s) may be affected too.
 
 this issue caused by the timing violation of the dataflow from upstream logic device, when the incoming data is sampled at LOW state of WE signal line.
