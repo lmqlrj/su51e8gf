@@ -1,6 +1,9 @@
 change log
 
 
+2011.1.6    local_bus.v: bugfix #900101: sfp is recognized as copper sfp.
+            iic.v: optimize code.
+
 2010.12.19  rename leddetect.v to leddriver.v.
             rename su51e8gf.v to su51e8gf_top.v
 
