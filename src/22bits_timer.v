@@ -18,7 +18,7 @@ begin
 	else
 	begin
 		counter <= counter + 1'b1;
-		timer <= counter[22];
+		timer <= counter[23];
 	end
 end
 endmodule
