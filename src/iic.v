@@ -112,7 +112,7 @@ parameter	IDLE=5'h15;			//send the end signal
 
 assign	busy=write_command | read_command | command_over;
 assign	sda=(sda_delay==LOW) ? LOW : 1'bz;
-assign	scl=(iic_scl_out==LOW) ? LOW : 1'bz;
+assign	scl=(iic_scl_out==LOW) ? LOW : 1'b1;
 assign	iic_sda_in = sda;
 
 
