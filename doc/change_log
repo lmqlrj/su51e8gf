@@ -1,0 +1,11 @@
+change log
+
+
+2010.8.3    regs_ctl: change meta info, remove unused regs and wires, correct I2C scl switch range, connect sda/i2c directly to i/o pin.
+
+2010.7.16   22bits_timer: extend bit width of timer counter.
+
+2010.7.14   iic: bugfix #900200: the corresponding I2C scl is driven low when selected.
+
+2010.7.5    initial version.
+

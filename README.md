@@ -1,8 +1,18 @@
 su51e8gf
 ========
 
-verilog project
+log # definition:
 
+    9      00      0       00
+
+  type  project module#  log#
+verilog su51e8gf 0:top
+                 1:localbus
+                 2:i2c
+                 3:intterupt
+                 4:clock
+                 5:sfp
+                 6:led
 
 branches and name convention:
 
@@ -35,3 +45,6 @@ feature           |   0--0--0--0 feature/print           0---0-----0----0--0 fea
                   |                                                                       /
 feature           0--0---0----0--0----0-----0--0---0--------0---0---------0----0---------0
                         feature/display
+
+time---------------------------------------------------------------------------------------------------------------->
+

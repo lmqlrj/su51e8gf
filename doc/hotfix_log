@@ -1,0 +1,37 @@
+hotfix log
+
+
+
+2010.7.14   iic: bugfix #900200: the corresponding I2C scl is driven low when selected.
+
+in the original version of iic.v, scl outputs HIG_Z or LOW.
+
+assign	scl=(iic_scl_out==LOW) ? LOW : 1'bz;
+
+but when instanciated in the top module, regs_ctl.v, i2c outputs scl through a buffer to i/o pin of cpld:
+
+assign	scl0 = (iic_sel == 8'h01)?scl:1'bz;
+
+atfter synthesis, above code looks like:
+
+                    iic_sel
+                       0
+                       |
+                       |
+                     |\|
+                     | \
+     scl_____________|  \_______scl0
+                     |  /
+                     | /
+                     |/
+
+as I thought, when iic_sel is 8'h01, scl0 should be scl, but it's not. why?
+because when iic_sel is on, scl0 is whatever scl is. but when scl is 1'bz.
+in internal circuits of cpld ,not at the i/o pins, 1'bz means LOW OR HIGH. 1'bz is what it realy means only at the i/o pin of the device.
+for example, if scl is an output port, or it's assigned to an output port, the output port will be HIGH_Z when scl=1'bz.
+otherwise, as shown above, scl connect to a buffer internally, scl=1'bz means the state of scl is unexpected, it is either 1 or 0, just like scl=1'bx.
+obviously scl was driven LOW internally when scl=1'bz, as the symptom shown.
+
+correction is easy. since the original version of iic.v is supposed to used as a independent module, which direct its module port to i/o pin of the device.
+HIGH_Z at the scl pin usually driven HIGH by an externally connected pull-up resistor, just like driving the scl pin HIGH internally.
+change the HIGH_Z state to HIGH at the scl wire, i.e 1'bz to 1'b1, to fix this issue.
