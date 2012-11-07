@@ -52,9 +52,7 @@ module regs_ctl(
 		sfp_only_pin,
 		sfp_los_pin,
 		txdis,
-/*		tx_fault,*/
 
-/*		sda_in,*/
 		scl0,
 		scl1,
 		scl2,
@@ -95,7 +93,6 @@ input           cplda_lbus_rd_n;
 output          cplda_lbus_rdy_n;  
 output          cplda_lbus_int_n;  
                 
-/*inout	sda_in;*/
 input	lm80;
 input	adt75;
 output	lm80_reset_n;
@@ -109,7 +106,6 @@ input	board_online_status;
 
 input	[7:0]	sfp_only_pin;//sfp ABS pin
 input	[7:0]	sfp_los_pin;//sfp LOS pin
-/*input	[7:0]	tx_fault;//sfp tx_fault pin*/
 output	[7:0]	txdis;//sfp txdis pin
 
 output	led0;
@@ -144,37 +140,26 @@ reg     [7:0]   cplda_reg_wdata;
 reg     [7:0]   cplda_reg_wdata_dly;                      
                 
 
-//reg	[7:0]	data_width;//local bus data width register, read only
-//reg	[7:0]	cpld_version;//cpld version register, read only
 reg	[7:0]	cpld_test;//cpld test register, read and write
-//reg	[7:0]	compiling_month;//cpld compiling month register, read only
-//reg	[7:0]	compiling_date;//cpld compiling date register, read only
-//reg	[7:0]	pcb_version;//board pcb version register, read only
-//reg	[7:0]	board_version;//board version register, read only
-reg	[7:0]	board_config;//board configuration register, read only
-reg	[7:0]	board_online;//board online status register, read only
-reg	[7:0]	int_source;//int source register, read only, [7:0] reserved reserved reserved LOS ABS LM75 LM80
-reg	[7:0]	int_mask;//int mask register, read and write
+reg	[3:0]	int_source;//int source register, read only, [7:0] reserved reserved reserved LOS ABS LM75 LM80
+reg	[3:0]	int_mask;//int mask register, read and write
 reg	[7:0]	debugging_led;//debugging led control register, read and write
 reg	[7:0]	test_mode;//test mode selection register, read and write
-reg	[7:0]	cpld_tck;//cpld tck register, write only
-reg	[7:0]	cpld_tdi;//cpld tdi register, write only
-reg	[7:0]	cpld_tdo;//cpld tdo register, read only
-reg	[7:0]	cpld_tms;//cpld tms register, write only
+reg	cpld_tck;//cpld tck register, write only
+reg	cpld_tdi;//cpld tdi register, write only
+reg	cpld_tdo;//cpld tdo register, read only
+reg	cpld_tms;//cpld tms register, write only
 reg	[7:0]	txdis;//sfp tx disable register, read and write
 reg	[7:0]	led_link;//link led register, read and write
 reg	[7:0]	led_act;//act led register, read and write
-reg	[7:0]	jtag_sel;//JTAG loading mode selection register, read and write
+reg	jtag_sel;//JTAG loading mode selection register, read and write
 reg	[7:0]	iic_sel;//SFP IIC selection register, write only
-//reg [7:0]	txfault;
 
 reg	[6:0]	dev_id;
 reg	[7:0]	add;
 reg	[1:0]	command;
 reg	[7:0]	data_out;
 reg	software_wp;
-//reg	iic_dir;//1:CPLD->SFP;0:SFP->CPLD
-//reg	sda_temp;
                 
 reg     [7:0]   sfp_only_reg;//sfp online status register
 reg	[7:0]	sfp_only_pad;//sfp online status filter temp
@@ -239,18 +224,8 @@ reg	sfp_los_n;
 reg sfp_abs_rc;
 reg	sfp_los_rc;
                 
-
-/*reg	[23:0]	led_timer;*/
-/*reg	led_clk;*/
 wire	led_counter;
-reg	led0;
-reg	led1;
-reg	led2;
-reg	led3;
-reg	led4;
-reg	led5;
-reg	led6;
-reg	led7;
+
 reg             int_spca_reg_rc0;
 
 reg          cplda_lbus_int_n;  
@@ -277,32 +252,24 @@ wire	[7:0]	data_in;
 wire	scl;
 wire	sda;
 
-wire	scl0;
-wire	scl1;
-wire	scl2;
-wire	scl3;
-wire	scl4;
-wire	scl5;
-wire	scl6;
-wire	scl7;
-
 parameter   LOGIC_VERSION = 8'h01;   //Logic Version Number
 parameter   LOGIC_DATA_WIDTH = 8'h00;   //Data Width
 parameter   LOGIC_COMPILING_MONTH = 8'ha8;   //Compiling Year and Month
-parameter   LOGIC_COMPILING_DATE = 8'h03;   //Compiling Date
+parameter   LOGIC_COMPILING_DATE = 8'h09;   //Compiling Date
 parameter   PCB_BOARD_VERSION = 8'h01;   //Pcb Version Number
 parameter   BOARD_MAN_VERSION = 8'h01;   //Board Version Number
+parameter   BOARD_CONFIG = 8'h00;
 
 assign  lbus_reg_rd_n = cplda_lbus_cs_n || cplda_lbus_rd_n;
 assign  lbus_reg_we_n = cplda_lbus_cs_n || cplda_lbus_wr_n;
 assign	cplda_lbus_rdy_n = (lbus_reg_rd_n && lbus_reg_we_n)?1'bz:0;
 assign	lm80_reset_n = rst_n;
 assign	led_test0 = led_counter;
-assign	jtag_con = jtag_sel[0];
+assign	jtag_con = jtag_sel;
 assign	jtag_sys = ~jtag_con;
-assign	tck = cpld_tck[0];
-assign	tdi = cpld_tdi[0];
-assign	tms = cpld_tms[0];
+assign	tck = cpld_tck;
+assign	tdi = cpld_tdi;
+assign	tms = cpld_tms;
 assign	scl0 = (iic_sel == 8'h00)?scl:1'bz;
 assign	scl1 = (iic_sel == 8'h01)?scl:1'bz;
 assign	scl2 = (iic_sel == 8'h02)?scl:1'bz;
@@ -311,9 +278,6 @@ assign	scl4 = (iic_sel == 8'h04)?scl:1'bz;
 assign	scl5 = (iic_sel == 8'h05)?scl:1'bz;
 assign	scl6 = (iic_sel == 8'h06)?scl:1'bz;
 assign	scl7 = (iic_sel == 8'h07)?scl:1'bz;
-/*assign	sda = (iic_dir == 1'b1)?sda_temp:1'bz;//CPLD->SFP
-assign	sda_in = (iic_dir == 1'b0)?sda_temp:1'bz;//SFP->CPLD*/
-
 
 /*********************************************************************
 ------------------------------Local bus Read   ----------------------
@@ -332,53 +296,53 @@ always @(posedge clk or negedge rst_n)
                  10'b0000000000:
                       cplda_reg_rdata <= cpld_test;//read cpld test register 
                  10'b0000000001:
-                      cplda_reg_rdata <= LOGIC_DATA_WIDTH;//read data width register
+                      cplda_reg_rdata <= LOGIC_DATA_WIDTH;//read data width
                  10'b0000000010:
-                      cplda_reg_rdata <= LOGIC_VERSION;//read cpld version register
+                      cplda_reg_rdata <= LOGIC_VERSION;//read cpld version
                  10'b0000000011:
-                      cplda_reg_rdata <= LOGIC_COMPILING_MONTH;//read cpld compiling month register
+                      cplda_reg_rdata <= LOGIC_COMPILING_MONTH;//read cpld compiling month
                  10'b0000000100:
-                      cplda_reg_rdata <= LOGIC_COMPILING_DATE;//read cpld compiling date register
+                      cplda_reg_rdata <= LOGIC_COMPILING_DATE;//read cpld compiling date
                  10'b0000000101:
-                      cplda_reg_rdata <= PCB_BOARD_VERSION;//read pcb version register
+                      cplda_reg_rdata <= PCB_BOARD_VERSION;//read pcb version
                  10'b0000000110:
-                      cplda_reg_rdata <= BOARD_MAN_VERSION;//read board version register
+                      cplda_reg_rdata <= BOARD_MAN_VERSION;//read board version
                  10'b0000000111:
-                      cplda_reg_rdata <= board_config;//read board configuration register
+                      cplda_reg_rdata <= BOARD_CONFIG;//read board configuration
                  10'b0000001010:
-                      cplda_reg_rdata <= board_online;//read board online status register
+                      cplda_reg_rdata <= {7'b000000,board_online_status};//read board online status register
                  10'b0000001101:
                       cplda_reg_rdata <= test_mode;//read cpld test mode selection register
                  10'b0000100111:
-                      cplda_reg_rdata <= int_source;//read int source register
+                      cplda_reg_rdata <= {4'b1111,int_source};//read int source register
                  10'b0000101000:
-                      cplda_reg_rdata <= int_mask;//read int mask register
+                      cplda_reg_rdata <= {4'b1111,int_mask};//read int mask register
                  10'b0000101111:
                       cplda_reg_rdata <= debugging_led;//read debugging led control register
-	         10'b0000111000:
-			 cplda_reg_rdata <= cpld_tdo;//read cpld tdo register
-	         10'b0001000000:
-			 cplda_reg_rdata <= txdis;//read cpld txdis register
-	         10'b0001000001:
-			 cplda_reg_rdata <= led_link;//read led link register
-	         10'b0001000010:
-			 cplda_reg_rdata <= led_act;//read led act register
-	         10'b0001000011:
-			 cplda_reg_rdata <= jtag_sel;//read jtag loading mode selection register
-                 10'b0001001000:                                                                
-			 cplda_reg_rdata <= data_in;//read IIC data input register
-                 10'b0001001011:                                                                
-			 cplda_reg_rdata <= {7'b0000000,fail};//read IIC fail flag
-                 10'b0001001100:                                                                
-			 cplda_reg_rdata <= {7'b0000000,busy};//read IIC busy flag
-                 10'b0001010000: 
-			 cplda_reg_rdata <= sfp_only_reg;
-                 10'b0001010001: 
-			 cplda_reg_rdata <= sfp_los_reg;
-                 10'b0001010010: 
-			 cplda_reg_rdata <= abs_int_n_reg;
-                 10'b0001010011: 
-			 cplda_reg_rdata <= los_int_n_reg;
+	               10'b0000111000:
+			                cplda_reg_rdata <= cpld_tdo;//read cpld tdo register
+	               10'b0001000000:
+			                cplda_reg_rdata <= txdis;//read cpld txdis register
+	               10'b0001000001:
+			                cplda_reg_rdata <= led_link;//read led link register
+	               10'b0001000010:
+			                cplda_reg_rdata <= led_act;//read led act register
+	               10'b0001000011:
+			                cplda_reg_rdata <= {7'b000000,jtag_sel};//read jtag loading mode selection register
+                   10'b0001001000:                                                                
+			                cplda_reg_rdata <= data_in;//read IIC data input register
+                                10'b0001001011:                                                                
+			                cplda_reg_rdata <= {7'b0000000,fail};//read IIC fail flag
+                                10'b0001001100:                                                                
+			                cplda_reg_rdata <= {7'b0000000,busy};//read IIC busy flag
+                                10'b0001010000: 
+			                cplda_reg_rdata <= sfp_only_reg;
+                                10'b0001010001: 
+			                cplda_reg_rdata <= sfp_los_reg;
+                                10'b0001010010: 
+			                cplda_reg_rdata <= abs_int_n_reg;
+                                10'b0001010011: 
+			                cplda_reg_rdata <= los_int_n_reg;
                  default:
                       cplda_reg_rdata <= 8'h00;
             endcase
@@ -415,32 +379,23 @@ always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)
         begin
-//		data_width <= LOGIC_DATA_WIDTH;
-//		cpld_version <= LOGIC_VERSION;
-//		compiling_month <= LOGIC_COMPILING_MONTH;
-//		compiling_date <= LOGIC_COMPILING_DATE;
-//		pcb_version <= PCB_BOARD_VERSION;
-//		board_version <= BOARD_MAN_VERSION;
-		board_config <= 8'hff;
 		test_mode <= 8'b00000011;
 		cpld_test <= 8'b00000000;
 		debugging_led <= 8'b00000001;
-		cpld_tck <= 8'h00;
-		cpld_tdi <= 8'hff;
-		cpld_tms <= 8'hff;
-		int_mask <= 8'hff;
+		cpld_tck <= 1'b0;
+		cpld_tdi <= 1'b1;
+		cpld_tms <= 1'b1;
+		int_mask <= 4'hf;
 		led_link <= 8'hff;
 		led_act <= 8'hff;
 		txdis <= 8'h00;
-		jtag_sel <= 8'h00;
+		jtag_sel <= 1'b0;
 		iic_sel <= 8'h00;
 		dev_id <= 7'b0000000;
 		add <= 8'h00;
 		command <= 2'b00;
 		data_out <= 8'h00;
 		software_wp <= 1'b0;
-//		iic_dir <= 1'b0;
-//		txfault <= 8'h00;
         end
     else if(!lbus_reg_we_n)
         begin
@@ -450,15 +405,15 @@ begin
                 10'b0000001101:                                                                
 			test_mode <= cplda_reg_wdata;//write test mode selection register
 		10'b0000101000:
-			int_mask <= cplda_reg_wdata;//write int mask register
+			int_mask <= cplda_reg_wdata[3:0];//write int mask register
                 10'b0000101111:                                                                
 			debugging_led <= cplda_reg_wdata;//write debugging led register
                 10'b0000111001:                                                                
-			cpld_tdi <= cplda_reg_wdata;//write cpld tdi register
+			cpld_tdi <= cplda_reg_wdata[0];//write cpld tdi register
                 10'b0000111011:                                                                
-			cpld_tms <= cplda_reg_wdata;//write cpld tms register
+			cpld_tms <= cplda_reg_wdata[0];//write cpld tms register
                 10'b0000111100:                                                                
-			cpld_tck <= cplda_reg_wdata;//write cpld tck register
+			cpld_tck <= cplda_reg_wdata[0];//write cpld tck register
                 10'b0001000000:                                                                
 			txdis <= cplda_reg_wdata;//write sfp tx disable register
                 10'b0001000001:                                                                
@@ -466,7 +421,7 @@ begin
                 10'b0001000010:                                                                
 			led_act <= cplda_reg_wdata;//write led act register
                 10'b0001000011:                                                                
-			jtag_sel <= cplda_reg_wdata;//write jtag loading selection register
+			jtag_sel <= cplda_reg_wdata[0];//write jtag loading selection register
                 10'b0001000100:                                                                
 			iic_sel <= cplda_reg_wdata;//write SFP IIC selection register
                 10'b0001000101:                                                                
@@ -479,17 +434,15 @@ begin
 			data_out <= cplda_reg_wdata;//write IIC data output register
                 10'b0001001010:                                                                
 			software_wp <= cplda_reg_wdata[0];//write IIC controller protection register
-//		10'b0001001101:
-//			iic_dir <= cplda_reg_wdata[0];//write IIC data direction register
                 default:
                     begin
-                        ;                        
+                        iic_sel <= iic_sel;                        
                     end                      
             endcase
         end 
     else
         begin
-/*		txfault <= tx_fault*/;
+        iic_sel <= iic_sel;
         end                                                    	
 end                                                                    
 
@@ -1050,25 +1003,13 @@ begin
 		adt75_os_n <= adt75;
 	end
 end
-//---------------------Board online status----------------
-always @(posedge clk or negedge rst_n)
-begin
-	if(rst_n == 1'b0)
-	begin
-		board_online <= 8'h01;
-	end
-	else if(board_online_status == 1'b0)
-	begin
-		board_online <= 8'h00;
-	end
-end
 
 //--------------------int_reg read clear --------------------
 always @(posedge clk or negedge rst_n)
     begin
         if (rst_n==1'b0) 
             begin
-                int_source  <= 8'hff;
+                int_source  <= 4'hf;
                 int_spca_reg_rc0<=1'b0;
 		cplda_lbus_int_n <= 1'b1;
             end
@@ -1080,7 +1021,7 @@ always @(posedge clk or negedge rst_n)
 		end
                 else if((int_spca_reg_rc0==1'b1)&&(lbus_reg_rd_n==1'b1))
                     begin
-                        int_source <= 8'hff;
+                        int_source <= 4'hf;
                         int_spca_reg_rc0<= 1'b0;
                     end
                 else
@@ -1088,201 +1029,23 @@ always @(posedge clk or negedge rst_n)
                         int_source [0]  <= (int_mask [0] == 1'b1)? lm80_int_n:1'b1; 
                         int_source [1]  <= (int_mask [1] == 1'b1)? adt75_os_n:1'b1; 
                         int_source [2]  <= (int_mask [2] == 1'b1)? sfp_abs_n:1'b1; 
-                        int_source [3]  <= (int_mask [3] == 1'b1)? sfp_los_n:1'b1; 
-                        int_source [4]  <= int_source [4];    
-                        int_source [5]  <= int_source [5];    
-                        int_source [6]  <= int_source [6];    
-                        int_source [7]  <= int_source [7];            
+                        int_source [3]  <= (int_mask [3] == 1'b1)? sfp_los_n:1'b1;       
                         int_spca_reg_rc0<= int_spca_reg_rc0;  
 			cplda_lbus_int_n <= (int_source[0] && int_source[1]) && (int_source[2] && int_source[3]);
                     end            
             end
     end                                 
 
-//-------------------------timer------------------------------------------
-/*always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led_timer <= 24'h000000;
-		led_clk <= 1'b0;
-	end
-	else
-	begin
-		led_clk <= led_timer[22];
-		led_timer <= led_timer + 1'd1;
-	end
-end*/
-//------------------------SFP0 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led0 <= 1'b1;
-	end
-	else if (led_link[0] == 1'b1)
-	begin
-		led0 <= 1'b1;
-	end
-	else if (led_act[0] == 1'b1)
-	begin
-		led0 <= 1'b0;
-	end
-	else
-	begin
-		led0 <= led_counter;
-	end
-end
-//------------------------SFP1 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led1 <= 1'b1;
-	end
-	else if (led_link[1] == 1'b1)
-	begin
-		led1 <= 1'b1;
-	end
-	else if (led_act[1] == 1'b1)
-	begin
-		led1 <= 1'b0;
-	end
-	else
-	begin
-		led1 <= led_counter;
-	end
-end
-//------------------------SFP2 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led2 <= 1'b1;
-	end
-	else if (led_link[2] == 1'b1)
-	begin
-		led2 <= 1'b1;
-	end
-	else if (led_act[2] == 1'b1)
-	begin
-		led2 <= 1'b0;
-	end
-	else
-	begin
-		led2 <= led_counter;
-	end
-end
-//------------------------SFP3 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led3 <= 1'b1;
-	end
-	else if (led_link[3] == 1'b1)
-	begin
-		led3 <= 1'b1;
-	end
-	else if (led_act[3] == 1'b1)
-	begin
-		led3 <= 1'b0;
-	end
-	else
-	begin
-		led3 <= led_counter;
-	end
-end
-//------------------------SFP4 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led4 <= 1'b1;
-	end
-	else if (led_link[4] == 1'b1)
-	begin
-		led4 <= 1'b1;
-	end
-	else if (led_act[4] == 1'b1)
-	begin
-		led4 <= 1'b0;
-	end
-	else
-	begin
-		led4 <= led_counter;
-	end
-end
-//------------------------SFP5 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led5 <= 1'b1;
-	end
-	else if (led_link[5] == 1'b1)
-	begin
-		led5 <= 1'b1;
-	end
-	else if (led_act[5] == 1'b1)
-	begin
-		led5 <= 1'b0;
-	end
-	else
-	begin
-		led5 <= led_counter;
-	end
-end
-//------------------------SFP6 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led6 <= 1'b1;
-	end
-	else if (led_link[6] == 1'b1)
-	begin
-		led6 <= 1'b1;
-	end
-	else if (led_act[6] == 1'b1)
-	begin
-		led6 <= 1'b0;
-	end
-	else
-	begin
-		led6 <= led_counter;
-	end
-end
-//------------------------SFP7 LED control--------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		led7 <= 1'b1;
-	end
-	else if (led_link[7] == 1'b1)
-	begin
-		led7 <= 1'b1;
-	end
-	else if (led_act[7] == 1'b1)
-	begin
-		led7 <= 1'b0;
-	end
-	else
-	begin
-		led7 <= led_counter;
-	end
-end
 //-----------------------JTAG Mode---------------------------------------
 always @(posedge clk or negedge rst_n)
 begin
 	if (rst_n == 1'b0)
 	begin
-		cpld_tdo <= 8'b0;
+		cpld_tdo <= 1'b0;
 	end
-	else if (jtag_sel[0] == 1'b1)
+	else if (jtag_sel == 1'b1)
 	begin
-		cpld_tdo[0] <= tdo;
+		cpld_tdo <= tdo;
 	end
 end
 //-----------------------Led test----------------------------------------
@@ -1292,7 +1055,7 @@ begin
 	begin
 		led_test1 <= 1'b1;
 		led_test2 <= 1'b1;
-		led_test3 <= sfp_abs_n;//test sfp abs int
+		led_test3 <= 1'b1;
 	end
 	else if (sfp_abs_n == 1'b0)
 	begin
@@ -1302,11 +1065,26 @@ begin
 	begin
 		led_test2 <= led_counter;
 	end
-/*	else if (txfault != 8'h00)
+	else
 	begin
-		led_test3 <= led_counter;
-	end*/
+	led_test3 <= led_test3;
+	end
 end
+leddetect ledout(
+	.clk(clk),
+	.rst_n(rst_n),
+	.link(led_link),
+	.act(led_act),
+	.blink(led_counter),
+	.led0(led0),
+	.led1(led1),
+	.led2(led2),
+	.led3(led3),
+	.led4(led4),
+	.led5(led5),
+	.led6(led6),
+	.led7(led7)
+);
 iic i2c(
         .command(command),
         .fail(fail),
