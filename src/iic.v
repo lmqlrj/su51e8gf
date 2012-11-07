@@ -24,7 +24,8 @@ module iic(
 	sda,		//IIC1 sda signal
 	scl,		//IIC1 scl signal
 	software_wp,     //eeprom write protect signal
-	two_bytes    //two-byte operation select, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
+	two_bytes,    //two-byte operation select, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
+	clk_100khz
 	);
 
 input	clk;
@@ -39,6 +40,7 @@ input two_bytes;    //two-byte operation select, 1 for two-byte operation, 0 oth
 output	fail;
 output	busy;
 output	[15:0] data_in;    //two-byte read, mod by lumeiquan@2010-9-24
+output clk_100khz;
 
 output	scl;
 inout	sda;
@@ -68,6 +70,7 @@ reg	[5:0] current_state;
 reg [4:0] prescl_cnt;
 reg sixteen_bits;    //two bytes read or write flag, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
 reg [7:0] data_in_reg;    //temperory reg for data from IIC device, mod by lumeiquan@2010-9-24
+reg clk_100khz;
 
 
 parameter	YES=1'b1;
@@ -175,9 +178,15 @@ always @ (posedge clk or negedge rst_n)
 always @ (posedge clk or negedge rst_n)
 	begin
 		if (rst_n==0)
-			cnt_20us<=ZERO;
-		else if (cnt_20us==10'b1010011010)
-			cnt_20us<=ZERO;
+		  begin
+			  cnt_20us<=ZERO;
+			  clk_100khz<=1'b0;
+		  end
+		else if (cnt_20us==10'b101001101)
+			begin
+			  cnt_20us<=ZERO;
+			  clk_100khz<=~clk_100khz;
+			end
 		else
 			cnt_20us<=cnt_20us+1'b1;
 	end

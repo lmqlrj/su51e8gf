@@ -2,6 +2,30 @@ hotfix log
 
 
 
+2010.12.18  local_bus: bugfix #900100: during local bus writing to a single bit of TXDIS register, other bit(s) may be affected too.
+
+this issue caused by the timing violation of the dataflow from upstream logic device, when the incoming data is sampled at LOW state of WE signal line.
+
+                    <------------- write data valid -------------->
+cs ---                                                                          ------
+      |                                                                        |
+      |________________________________________________________________________|
+we -----------------                                               -------------------
+                    |                                             |
+                    |_____________________________________________|<------------ data should be sampled at this rising edge.
+data  ___________________________     ____________________________________
+     /                           \___/                                    \___________
+     \___________________________/   \____________________________________/
+                                   ^
+                                   |____ data changes during write data valid time
+
+as shown above, during write data valid time, data line should be at determined state, constantly, until we driven HIGH.
+due to writing timing violation, the changing data is writen to the register, e.g TXDIS, which is directly output to TX_DISABLE pin of sfp, causing the sfp restart.
+
+fix to this issue is sampling the data lines at the rising edge of we at the end of writing operation.
+
+
+
 2010.7.14   iic: bugfix #900200: the corresponding I2C scl is driven low when selected.
 
 in the original version of iic.v, scl outputs HIG_Z or LOW.

@@ -1,6 +1,31 @@
 change log
 
 
+2010.12.19  rename leddetect.v to leddriver.v.
+            rename su51e8gf.v to su51e8gf_top.v
+
+2010.12.18  bugfix #900100: during local bus writing to a single bit of TXDIS register, other bit(s) may be affected too.
+            extract code from top module to build sfp_ctrl.v, sfp status detect and interrupt flag management module.
+
+2010.12.15  iic.v: add clock generator.
+
+2010.11.26  build new FSM module: interrupt.v, sfp status interrupt handling module.
+            rename four_hz_timer.v to counter.v, adjust clock to 100Hz and 6Hz, for sfp status detecting and led driving, respectively.
+
+release version 002
+
+2010.10.12  iic.v: add 2-byte-operation mode for copper sfp interface.
+            su51e8gf.v: change relevant regs and ports to ultilize iic.v.
+
+2010.8.25   change regs_ctl.v to su51e8gf.v, parameterize register address.
+            change 22bits_timer.v to four_hz_timer.v.
+
+2010.8.20   leddetect.v: rename wires.
+
+2010.8.17   iic.v: change bit width for counter.
+
+2010.8.9    regs_ctl: remove unused code, extract led controller to another module, leddetect.v.
+
 2010.8.3    regs_ctl: change meta info, remove unused regs and wires, correct I2C scl switch range, connect sda/i2c directly to i/o pin.
 
 2010.7.16   22bits_timer: extend bit width of timer counter.
