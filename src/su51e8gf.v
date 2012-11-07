@@ -158,7 +158,7 @@ reg [7:0]       iic_sel;               //SFP IIC selection register, write only
 reg [6:0]       dev_id;                //IIC Device ID
 reg [7:0]       add;                   //IIC Device Internal Address
 reg [1:0]       command;               //IIC Command
-reg [7:0]       data_out;              //IIC Data to Slave
+reg [15:0]       data_out;              //IIC Data to Slave
 reg             software_wp;           //IIC Module Write Protection
                  
 reg [7:0]       sfp_only_reg;          //sfp online status register
@@ -223,6 +223,7 @@ reg             sfp_abs_n;
 reg             sfp_los_n;
 reg             sfp_abs_rc;
 reg             sfp_los_rc;
+reg             two_bytes;
                 
 wire            led_counter;
 
@@ -248,14 +249,14 @@ wire            jtag_sys;
                 
 wire            fail;
 wire            busy;
-wire            [7:0]	data_in;
+wire            [15:0]	data_in;
 wire            scl;
 wire            sda;
 
-parameter       LOGIC_VERSION                 = 8'h01;   //Logic Version Number
+parameter       LOGIC_VERSION                 = 8'h02;   //Logic Version Number
 parameter       LOGIC_DATA_WIDTH              = 8'h00;   //Data Width
-parameter       LOGIC_COMPILING_MONTH         = 8'ha8;   //Compiling Year and Month
-parameter       LOGIC_COMPILING_DATE          = 8'h19;   //Compiling Date
+parameter       LOGIC_COMPILING_MONTH         = 8'haa;   //Compiling Year and Month
+parameter       LOGIC_COMPILING_DATE          = 8'h0c;   //Compiling Date
 parameter       PCB_BOARD_VERSION             = 8'h01;   //Pcb Version Number
 parameter       BOARD_MAN_VERSION             = 8'h01;   //Board Version Number
 parameter       BOARD_CONFIG                  = 8'h00;   //Board Configration
@@ -291,6 +292,9 @@ parameter       ADDR_IIC_DATA_OUT             = 10'b0001001001;      //0x49
 parameter       ADDR_IIC_WP                   = 10'b0001001010;      //0x4A
 parameter       ADDR_IIC_FAIL                 = 10'b0001001011;      //0x4B
 parameter       ADDR_IIC_BUSY                 = 10'b0001001100;      //0x4C
+parameter	    ADDR_IIC_BYTE_SEL             = 10'b0001001101;      //0x4D
+parameter       ADDR_IIC_DATA_IN_HIGH         = 10'b0001001110;      //0x4E
+parameter       ADDR_IIC_DATA_OUT_HIGH        = 10'b0001001111;      //0x4F
 parameter       ADDR_SFP_ONLINE_STATUS        = 10'b0001010000;      //0x50
 parameter       ADDR_SFP_LOS_STATUS           = 10'b0001010001;      //0x51
 parameter       ADDR_SFP_ONLINE_INT           = 10'b0001010010;      //0x52
@@ -367,7 +371,9 @@ begin
                  ADDR_JTAG_SEL:
                       cplda_reg_rdata <= {7'b0000000,jtag_sel};
                  ADDR_IIC_DATA_IN:                                                                
-                      cplda_reg_rdata <= data_in;
+                      cplda_reg_rdata <= data_in[7:0];
+                 ADDR_IIC_DATA_IN_HIGH:
+                      cplda_reg_rdata <= data_in[15:8];
                  ADDR_IIC_FAIL:                                                                
                       cplda_reg_rdata <= {7'b0000000,fail};
                  ADDR_IIC_BUSY:                                                                
@@ -440,8 +446,9 @@ begin
 		dev_id <= 7'b0000000;
 		add <= 8'h00;
 		command <= 2'b00;
-		data_out <= 8'h00;
+		data_out <= 16'h0000;
 		software_wp <= 1'b0;
+		two_bytes <= 1'b0;
         end
     else if(!lbus_reg_we_n)
         begin
@@ -477,9 +484,13 @@ begin
                 ADDR_IIC_COMMAND:                                                                
 			command <= cplda_reg_wdata[1:0];
                 ADDR_IIC_DATA_OUT:                                                                
-			data_out <= cplda_reg_wdata;
+			data_out[7:0] <= cplda_reg_wdata;
+			          ADDR_IIC_DATA_OUT_HIGH:
+			data_out[15:8] <= cplda_reg_wdata;
                 ADDR_IIC_WP:                                                                
 			software_wp <= cplda_reg_wdata[0];
+			          ADDR_IIC_BYTE_SEL:
+			two_bytes <= cplda_reg_wdata[0];
                 default:
                     begin
                         ;                        
@@ -1212,7 +1223,8 @@ iic i2c(
 	.rst_n(rst_n),
 	.sda(sda),
 	.scl(scl),
-	.software_wp(software_wp)
+	.software_wp(software_wp),
+	.two_bytes(two_bytes)
 	);
 four_hz_timer ledcounter(
 	.clk(clk),
