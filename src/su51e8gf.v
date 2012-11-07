@@ -6,14 +6,14 @@
 //                        All rights reserved
 //
 // Project      : SU51E8GF
-// File         : regs_ctl.v
+// File         : su51e8gf.v
 // Author       : l90003046
 // Email        : 
 // Version      : 1.0 
-// Module       : regs_ctl
-// Called by    : su51e8gf.v
+// Module       : su51e8gf
+// Called by    : 
 // Created      : 2010/05/01
-// Last Modified: 2010/08/02
+// Last Modified: 2010/08/17
 //------------------------------------------------------------------------------------
 //                           Revision History
 //------------------------------------------------------------------------------------
@@ -28,58 +28,58 @@
 //   2.0  : .......................
 //   3.0  : .......................
 //************************************************************************************
-module regs_ctl( 
+module su51e8gf( 
                 rst_n,                     //Global Reset
                 clk,                       //Core Clock
                 
-                cplda_lbus_a,           
-                cplda_lbus_d,           
-                cplda_lbus_cs_n,    
-                cplda_lbus_wr_n,     
-                cplda_lbus_rd_n,     
-                cplda_lbus_rdy_n,  
-                cplda_lbus_int_n, 
+                cplda_lbus_a,              //Local Bus Address
+                cplda_lbus_d,              //Local Bus Data
+                cplda_lbus_cs_n,           //Local Bus CS
+                cplda_lbus_wr_n,           //Local Bus Write
+                cplda_lbus_rd_n,           //Local Bus Read
+                cplda_lbus_rdy_n,          //Local Bus Ready
+                cplda_lbus_int_n,          //Local Bus Interruption
                 
-		lm80,
-		adt75,
-		lm80_reset_n,
+                lm80,                      //LM80 Interruption
+                adt75,                     //ADT75 Interruption
+                lm80_reset_n,              //LM80 Reset
 
-		led_test0,
-		led_test1,
-		led_test2,
-		led_test3,
+                led_test0,                 //Led Testing
+                led_test1,
+                led_test2,
+                led_test3,
 
-		sfp_only_pin,
-		sfp_los_pin,
-		txdis,
+                sfp_only_pin,              //SFP ABS
+                sfp_los_pin,               //SFP LOS
+                txdis,                     //SFP TX Disable
+                
+                scl0,                      //SFP SCL
+                scl1,
+                scl2,
+                scl3,
+                scl4,
+                scl5,
+                scl6,
+                scl7,
+                sda,                       //SFP SDA
 
-		scl0,
-		scl1,
-		scl2,
-		scl3,
-		scl4,
-		scl5,
-		scl6,
-		scl7,
-		sda,
+                led0,                      //SFP LEDs
+                led1,
+                led2,
+                led3,
+                led4,
+                led5,
+                led6,
+                led7,
+                
+                jtag_con,                  //JTAG Connector Loading Selection
+                jtag_sys,                  //JTAG Online Loading Selection
+                tck,                       //Emulated TCK
+                tdi,                       //Emulated TDI
+                tms,                       //Emulated TMS
+                tdo,                       //Emulated TDO
 
-		led0,
-		led1,
-		led2,
-		led3,
-		led4,
-		led5,
-		led6,
-		led7,
-
-		jtag_con,
-		jtag_sys,
-		tck,
-		tdi,
-		tms,
-		tdo,
-
-		board_online_status
+                board_online_status        //Board Online Status Detect
                 );            
               
 input           rst_n; 
@@ -93,172 +93,208 @@ input           cplda_lbus_rd_n;
 output          cplda_lbus_rdy_n;  
 output          cplda_lbus_int_n;  
                 
-input	lm80;
-input	adt75;
-output	lm80_reset_n;
+input	          lm80;
+input	          adt75;
+output	        lm80_reset_n;
 
-output	led_test0;
-output	led_test1;
-output	led_test2;
-output	led_test3;
+output	        led_test0;
+output          led_test1;
+output          led_test2;
+output          led_test3;
 
-input	board_online_status;
+input           board_online_status;
 
-input	[7:0]	sfp_only_pin;//sfp ABS pin
-input	[7:0]	sfp_los_pin;//sfp LOS pin
-output	[7:0]	txdis;//sfp txdis pin
+input	[7:0]     sfp_only_pin;          //sfp ABS pin
+input	[7:0]     sfp_los_pin;           //sfp LOS pin
+output	[7:0]   txdis;                 //sfp txdis pin
 
-output	led0;
-output	led1;
-output	led2;
-output	led3;
-output	led4;
-output	led5;
-output	led6;
-output	led7;
-
-output	scl0;
-output	scl1;
-output	scl2;
-output	scl3;
-output	scl4;
-output	scl5;
-output	scl6;
-output	scl7;
-inout	sda;
-
-output	jtag_con;
-output	jtag_sys;
-output	tck;
-output	tdi;
-output	tms;
-input	tdo;
-
-
-reg     [7:0]   cplda_reg_rdata ;
-reg     [7:0]   cplda_reg_wdata;
-reg     [7:0]   cplda_reg_wdata_dly;                      
+output          led0;
+output          led1;
+output          led2;
+output          led3;
+output          led4;
+output          led5;
+output          led6;
+output          led7;
                 
+output          scl0;
+output          scl1;
+output          scl2;
+output          scl3;
+output          scl4;
+output          scl5;
+output          scl6;
+output          scl7;
+inout           sda;
 
-reg	[7:0]	cpld_test;//cpld test register, read and write
-reg	[3:0]	int_source;//int source register, read only, [7:0] reserved reserved reserved LOS ABS LM75 LM80
-reg	[3:0]	int_mask;//int mask register, read and write
-reg	[7:0]	debugging_led;//debugging led control register, read and write
-reg	[7:0]	test_mode;//test mode selection register, read and write
-reg	cpld_tck;//cpld tck register, write only
-reg	cpld_tdi;//cpld tdi register, write only
-reg	cpld_tdo;//cpld tdo register, read only
-reg	cpld_tms;//cpld tms register, write only
-reg	[7:0]	txdis;//sfp tx disable register, read and write
-reg	[7:0]	led_link;//link led register, read and write
-reg	[7:0]	led_act;//act led register, read and write
-reg	jtag_sel;//JTAG loading mode selection register, read and write
-reg	[7:0]	iic_sel;//SFP IIC selection register, write only
+output          jtag_con;
+output          jtag_sys;
+output          tck;
+output          tdi;
+output          tms;
+input           tdo;
 
-reg	[6:0]	dev_id;
-reg	[7:0]	add;
-reg	[1:0]	command;
-reg	[7:0]	data_out;
-reg	software_wp;
+
+reg [7:0]       cplda_reg_rdata ;
+reg [7:0]       cplda_reg_wdata;
+reg [7:0]       cplda_reg_wdata_dly;                      
+                 
                 
-reg     [7:0]   sfp_only_reg;//sfp online status register
-reg	[7:0]	sfp_only_pad;//sfp online status filter temp
-reg     [7:0]   sfp_only_reg_pad;
-reg     [7:0]   sfp_inout_int;//sfp inout neg pulse
-reg     [7:0]   sfp_los_reg;//sfp los status register
-reg	[7:0]	sfp_los_pad;//sfp los status filter temp
-reg     [7:0]   sfp_los_reg_pad; 
-reg     [7:0]   fiber_inout_int;//link updown neg pulse
-reg	sfp0_inout_n;
-reg	sfp1_inout_n;
-reg	sfp2_inout_n;
-reg	sfp3_inout_n;
-reg	sfp4_inout_n;
-reg	sfp5_inout_n;
-reg	sfp6_inout_n;
-reg	sfp7_inout_n;
-reg	sfp0_inout_pad1;
-reg	sfp0_inout_pad2;
-reg	sfp1_inout_pad1;
-reg	sfp1_inout_pad2;
-reg	sfp2_inout_pad1;
-reg	sfp2_inout_pad2;
-reg	sfp3_inout_pad1;
-reg	sfp3_inout_pad2;
-reg	sfp4_inout_pad1;
-reg	sfp4_inout_pad2;
-reg	sfp5_inout_pad1;
-reg	sfp5_inout_pad2;
-reg	sfp6_inout_pad1;
-reg	sfp6_inout_pad2;
-reg	sfp7_inout_pad1;
-reg	sfp7_inout_pad2;
-reg	sfp0_updown_n;
-reg	sfp1_updown_n;
-reg	sfp2_updown_n;
-reg	sfp3_updown_n;
-reg	sfp4_updown_n;
-reg	sfp5_updown_n;
-reg	sfp6_updown_n;
-reg	sfp7_updown_n;
-reg	sfp0_updown_pad1;
-reg	sfp0_updown_pad2;
-reg	sfp1_updown_pad1;
-reg	sfp1_updown_pad2;
-reg	sfp2_updown_pad1;
-reg	sfp2_updown_pad2;
-reg	sfp3_updown_pad1;
-reg	sfp3_updown_pad2;
-reg	sfp4_updown_pad1;
-reg	sfp4_updown_pad2;
-reg	sfp5_updown_pad1;
-reg	sfp5_updown_pad2;
-reg	sfp6_updown_pad1;
-reg	sfp6_updown_pad2;
-reg	sfp7_updown_pad1;
-reg	sfp7_updown_pad2;
-reg	[7:0]	abs_int_n_reg;
-reg	[7:0]	los_int_n_reg;
-reg	sfp_abs_n;
-reg	sfp_los_n;
-reg sfp_abs_rc;
-reg	sfp_los_rc;
+reg	[7:0]       cpld_test;             //cpld test register, read and write
+reg	[3:0]       int_source;            //int source register, read only, [7:0] reserved reserved reserved LOS ABS LM75 LM80
+reg	[3:0]       int_mask;              //int mask register, read and write
+reg	[7:0]       debugging_led;         //debugging led control register, read and write
+reg	[7:0]       test_mode;             //test mode selection register, read and write
+reg             cpld_tck;              //cpld tck register, write only
+reg             cpld_tdi;              //cpld tdi register, write only
+reg             cpld_tdo;              //cpld tdo register, read only
+reg             cpld_tms;              //cpld tms register, write only
+reg [7:0]       txdis;                 //sfp tx disable register, read and write
+reg [7:0]       led_link;              //link led register, read and write
+reg [7:0]       led_act;               //act led register, read and write
+reg             jtag_sel;              //JTAG loading mode selection register, read and write
+reg [7:0]       iic_sel;               //SFP IIC selection register, write only
                 
-wire	led_counter;
+reg [6:0]       dev_id;                //IIC Device ID
+reg [7:0]       add;                   //IIC Device Internal Address
+reg [1:0]       command;               //IIC Command
+reg [7:0]       data_out;              //IIC Data to Slave
+reg             software_wp;           //IIC Module Write Protection
+                 
+reg [7:0]       sfp_only_reg;          //sfp online status register
+reg [7:0]       sfp_only_pad;          //sfp online status filter temp
+reg [7:0]       sfp_only_reg_pad;
+reg [7:0]       sfp_inout_int;         //sfp inout neg pulse
+reg [7:0]       sfp_los_reg;           //sfp los status register
+reg [7:0]       sfp_los_pad;           //sfp los status filter temp
+reg [7:0]       sfp_los_reg_pad; 
+reg [7:0]       fiber_inout_int;       //link updown neg pulse
+reg             sfp0_inout_n;
+reg             sfp1_inout_n;
+reg             sfp2_inout_n;
+reg             sfp3_inout_n;
+reg             sfp4_inout_n;
+reg             sfp5_inout_n;
+reg             sfp6_inout_n;
+reg             sfp7_inout_n;
+reg             sfp0_inout_pad1;
+reg             sfp0_inout_pad2;
+reg             sfp1_inout_pad1;
+reg             sfp1_inout_pad2;
+reg             sfp2_inout_pad1;
+reg             sfp2_inout_pad2;
+reg             sfp3_inout_pad1;
+reg             sfp3_inout_pad2;
+reg             sfp4_inout_pad1;
+reg             sfp4_inout_pad2;
+reg             sfp5_inout_pad1;
+reg             sfp5_inout_pad2;
+reg             sfp6_inout_pad1;
+reg             sfp6_inout_pad2;
+reg             sfp7_inout_pad1;
+reg             sfp7_inout_pad2;
+reg             sfp0_updown_n;
+reg             sfp1_updown_n;
+reg             sfp2_updown_n;
+reg             sfp3_updown_n;
+reg             sfp4_updown_n;
+reg             sfp5_updown_n;
+reg             sfp6_updown_n;
+reg             sfp7_updown_n;
+reg             sfp0_updown_pad1;
+reg             sfp0_updown_pad2;
+reg             sfp1_updown_pad1;
+reg             sfp1_updown_pad2;
+reg             sfp2_updown_pad1;
+reg             sfp2_updown_pad2;
+reg             sfp3_updown_pad1;
+reg             sfp3_updown_pad2;
+reg             sfp4_updown_pad1;
+reg             sfp4_updown_pad2;
+reg             sfp5_updown_pad1;
+reg             sfp5_updown_pad2;
+reg             sfp6_updown_pad1;
+reg             sfp6_updown_pad2;
+reg             sfp7_updown_pad1;
+reg             sfp7_updown_pad2;
+reg [7:0]       abs_int_n_reg;
+reg [7:0]       los_int_n_reg;
+reg             sfp_abs_n;
+reg             sfp_los_n;
+reg             sfp_abs_rc;
+reg             sfp_los_rc;
+                
+wire            led_counter;
 
 reg             int_spca_reg_rc0;
 
-reg          cplda_lbus_int_n;  
-reg	lm80_int_n;
-reg	adt75_os_n;
+reg             cplda_lbus_int_n;  
+reg             lm80_int_n;
+reg             adt75_os_n;
 
-reg led_test1;
-reg	led_test2;
-reg	led_test3;
+reg             led_test1;
+reg             led_test2;
+reg             led_test3;
 
 wire            lbus_reg_rd_n;
 wire            lbus_reg_we_n;
-wire	cplda_lbus_rdy_n;
+wire            cplda_lbus_rdy_n;
                 
-wire	rst_n;
-wire	lm80_reset_n;
+wire            rst_n;
+wire            lm80_reset_n;
+                
+wire            jtag_con;
+wire            jtag_sys;
+                
+wire            fail;
+wire            busy;
+wire            [7:0]	data_in;
+wire            scl;
+wire            sda;
 
-wire	jtag_con;
-wire	jtag_sys;
+parameter       LOGIC_VERSION                 = 8'h01;   //Logic Version Number
+parameter       LOGIC_DATA_WIDTH              = 8'h00;   //Data Width
+parameter       LOGIC_COMPILING_MONTH         = 8'ha8;   //Compiling Year and Month
+parameter       LOGIC_COMPILING_DATE          = 8'h19;   //Compiling Date
+parameter       PCB_BOARD_VERSION             = 8'h01;   //Pcb Version Number
+parameter       BOARD_MAN_VERSION             = 8'h01;   //Board Version Number
+parameter       BOARD_CONFIG                  = 8'h00;   //Board Configration
 
-wire	fail;
-wire	busy;
-wire	[7:0]	data_in;
-wire	scl;
-wire	sda;
-
-parameter   LOGIC_VERSION = 8'h01;   //Logic Version Number
-parameter   LOGIC_DATA_WIDTH = 8'h00;   //Data Width
-parameter   LOGIC_COMPILING_MONTH = 8'ha8;   //Compiling Year and Month
-parameter   LOGIC_COMPILING_DATE = 8'h09;   //Compiling Date
-parameter   PCB_BOARD_VERSION = 8'h01;   //Pcb Version Number
-parameter   BOARD_MAN_VERSION = 8'h01;   //Board Version Number
-parameter   BOARD_CONFIG = 8'h00;
+/*---------------register addresses ---------------------------------*/
+parameter       ADDR_CPLD_TEST                = 10'b0000000000;      //0x00
+parameter       ADDR_DATA_WIDTH               = 10'b0000000001;      //0x01
+parameter       ADDR_LOGIC_VERSION            = 10'b0000000010;      //0x02
+parameter       ADDR_LOGIC_COMPILING_MONTH    = 10'b0000000011;      //0x03
+parameter       ADDR_LOGIC_COMPILING_DATE     = 10'b0000000100;      //0x04
+parameter       ADDR_PCB_BOARD_VERSION        = 10'b0000000101;      //0x05
+parameter       ADDR_BOARD_MAN_VERSION        = 10'b0000000110;      //0x06
+parameter       ADDR_BOARD_CONFIG             = 10'b0000000111;      //0x07
+parameter       ADDR_BOARD_ONLINE_STATUS      = 10'b0000001010;      //0x0A
+parameter       ADDR_TEST_MODE                = 10'b0000001101;      //0x0D
+parameter       ADDR_INT_SOURCE               = 10'b0000100111;      //0x27
+parameter       ADDR_INT_MASK                 = 10'b0000101000;      //0x28
+parameter       ADDR_DEBUGGING_LED            = 10'b0000101111;      //0x2F
+parameter       ADDR_CPLD_TDO                 = 10'b0000111000;      //0x38
+parameter       ADDR_CPLD_TDI                 = 10'b0000111001;      //0x39
+parameter       ADDR_CPLD_TMS                 = 10'b0000111011;      //0x3B
+parameter       ADDR_CPLD_TCK                 = 10'b0000111100;      //0x3C
+parameter       ADDR_TXDIS                    = 10'b0001000000;      //0x40
+parameter       ADDR_LED_LINK                 = 10'b0001000001;      //0x41
+parameter       ADDR_LED_ACT                  = 10'b0001000010;      //0x42
+parameter       ADDR_JTAG_SEL                 = 10'b0001000011;      //0x43
+parameter       ADDR_IIC_SEL                  = 10'b0001000100;      //0x44
+parameter       ADDR_IIC_DEV                  = 10'b0001000101;      //0x45
+parameter       ADDR_IIC_ADDR                 = 10'b0001000110;      //0x46
+parameter       ADDR_IIC_COMMAND              = 10'b0001000111;      //0x47
+parameter       ADDR_IIC_DATA_IN              = 10'b0001001000;      //0x48
+parameter       ADDR_IIC_DATA_OUT             = 10'b0001001001;      //0x49
+parameter       ADDR_IIC_WP                   = 10'b0001001010;      //0x4A
+parameter       ADDR_IIC_FAIL                 = 10'b0001001011;      //0x4B
+parameter       ADDR_IIC_BUSY                 = 10'b0001001100;      //0x4C
+parameter       ADDR_SFP_ONLINE_STATUS        = 10'b0001010000;      //0x50
+parameter       ADDR_SFP_LOS_STATUS           = 10'b0001010001;      //0x51
+parameter       ADDR_SFP_ONLINE_INT           = 10'b0001010010;      //0x52
+parameter       ADDR_SFP_LOS_INT              = 10'b0001010011;      //0x53
 
 assign  lbus_reg_rd_n = cplda_lbus_cs_n || cplda_lbus_rd_n;
 assign  lbus_reg_we_n = cplda_lbus_cs_n || cplda_lbus_wr_n;
@@ -286,6 +322,7 @@ assign	scl7 = (iic_sel == 8'h07)?scl:1'bz;
 assign  cplda_lbus_d = (lbus_reg_rd_n)?8'hzz:cplda_reg_rdata;
 
 always @(posedge clk or negedge rst_n)
+begin
     if(~rst_n)
         begin
             cplda_reg_rdata <= 8'h00;
@@ -293,66 +330,72 @@ always @(posedge clk or negedge rst_n)
     else if(!lbus_reg_rd_n)
         begin
             case(cplda_lbus_a[9:0])
-                 10'b0000000000:
-                      cplda_reg_rdata <= cpld_test;//read cpld test register 
-                 10'b0000000001:
-                      cplda_reg_rdata <= LOGIC_DATA_WIDTH;//read data width
-                 10'b0000000010:
-                      cplda_reg_rdata <= LOGIC_VERSION;//read cpld version
-                 10'b0000000011:
-                      cplda_reg_rdata <= LOGIC_COMPILING_MONTH;//read cpld compiling month
-                 10'b0000000100:
-                      cplda_reg_rdata <= LOGIC_COMPILING_DATE;//read cpld compiling date
-                 10'b0000000101:
-                      cplda_reg_rdata <= PCB_BOARD_VERSION;//read pcb version
-                 10'b0000000110:
-                      cplda_reg_rdata <= BOARD_MAN_VERSION;//read board version
-                 10'b0000000111:
-                      cplda_reg_rdata <= BOARD_CONFIG;//read board configuration
-                 10'b0000001010:
-                      cplda_reg_rdata <= {7'b000000,board_online_status};//read board online status register
-                 10'b0000001101:
-                      cplda_reg_rdata <= test_mode;//read cpld test mode selection register
-                 10'b0000100111:
-                      cplda_reg_rdata <= {4'b1111,int_source};//read int source register
-                 10'b0000101000:
-                      cplda_reg_rdata <= {4'b1111,int_mask};//read int mask register
-                 10'b0000101111:
-                      cplda_reg_rdata <= debugging_led;//read debugging led control register
-	               10'b0000111000:
-			                cplda_reg_rdata <= cpld_tdo;//read cpld tdo register
-	               10'b0001000000:
-			                cplda_reg_rdata <= txdis;//read cpld txdis register
-	               10'b0001000001:
-			                cplda_reg_rdata <= led_link;//read led link register
-	               10'b0001000010:
-			                cplda_reg_rdata <= led_act;//read led act register
-	               10'b0001000011:
-			                cplda_reg_rdata <= {7'b000000,jtag_sel};//read jtag loading mode selection register
-                   10'b0001001000:                                                                
-			                cplda_reg_rdata <= data_in;//read IIC data input register
-                                10'b0001001011:                                                                
-			                cplda_reg_rdata <= {7'b0000000,fail};//read IIC fail flag
-                                10'b0001001100:                                                                
-			                cplda_reg_rdata <= {7'b0000000,busy};//read IIC busy flag
-                                10'b0001010000: 
-			                cplda_reg_rdata <= sfp_only_reg;
-                                10'b0001010001: 
-			                cplda_reg_rdata <= sfp_los_reg;
-                                10'b0001010010: 
-			                cplda_reg_rdata <= abs_int_n_reg;
-                                10'b0001010011: 
-			                cplda_reg_rdata <= los_int_n_reg;
+                 ADDR_CPLD_TEST:
+                      cplda_reg_rdata <= cpld_test;
+                 ADDR_DATA_WIDTH:
+                      cplda_reg_rdata <= LOGIC_DATA_WIDTH;
+                 ADDR_LOGIC_VERSION:
+                      cplda_reg_rdata <= LOGIC_VERSION;
+                 ADDR_LOGIC_COMPILING_MONTH:
+                      cplda_reg_rdata <= LOGIC_COMPILING_MONTH;
+                 ADDR_LOGIC_COMPILING_DATE:
+                      cplda_reg_rdata <= LOGIC_COMPILING_DATE;
+                 ADDR_PCB_BOARD_VERSION:
+                      cplda_reg_rdata <= PCB_BOARD_VERSION;
+                 ADDR_BOARD_MAN_VERSION:
+                      cplda_reg_rdata <= BOARD_MAN_VERSION;
+                 ADDR_BOARD_CONFIG:
+                      cplda_reg_rdata <= BOARD_CONFIG;
+                 ADDR_BOARD_ONLINE_STATUS:
+                      cplda_reg_rdata <= {7'b000000,board_online_status};
+                 ADDR_TEST_MODE:
+                      cplda_reg_rdata <= test_mode;
+                 ADDR_INT_SOURCE:
+                      cplda_reg_rdata <= {4'b1111,int_source};
+                 ADDR_INT_MASK:
+                      cplda_reg_rdata <= {4'b1111,int_mask};
+                 ADDR_DEBUGGING_LED:
+                      cplda_reg_rdata <= debugging_led;
+                 ADDR_CPLD_TDO:
+                      cplda_reg_rdata <= cpld_tdo;
+                 ADDR_TXDIS:
+                      cplda_reg_rdata <= txdis;
+                 ADDR_LED_LINK:
+                      cplda_reg_rdata <= led_link;
+                 ADDR_LED_ACT:
+                      cplda_reg_rdata <= led_act;
+                 ADDR_JTAG_SEL:
+                      cplda_reg_rdata <= {7'b0000000,jtag_sel};
+                 ADDR_IIC_DATA_IN:                                                                
+                      cplda_reg_rdata <= data_in;
+                 ADDR_IIC_FAIL:                                                                
+                      cplda_reg_rdata <= {7'b0000000,fail};
+                 ADDR_IIC_BUSY:                                                                
+                      cplda_reg_rdata <= {7'b0000000,busy};
+                 ADDR_SFP_ONLINE_STATUS: 
+                      cplda_reg_rdata <= sfp_only_reg;
+                 ADDR_SFP_LOS_STATUS: 
+                      cplda_reg_rdata <= sfp_los_reg;
+                 ADDR_SFP_ONLINE_INT: 
+                      cplda_reg_rdata <= abs_int_n_reg;
+                 ADDR_SFP_LOS_INT: 
+                      cplda_reg_rdata <= los_int_n_reg;
                  default:
                       cplda_reg_rdata <= 8'h00;
             endcase
         end
+	else
+	begin
+		;
+	end
+end
                 
 /*********************************************************************
 ------------------------------Local bus Write   ----------------------
 *********************************************************************/ 
                 
 always @(posedge clk or negedge rst_n)
+begin
     if(~rst_n)  
         begin   
             cplda_reg_wdata_dly <= 8'h00;
@@ -361,7 +404,9 @@ always @(posedge clk or negedge rst_n)
         begin
             cplda_reg_wdata_dly <= cplda_lbus_d;
         end
+end
 always @(posedge clk or negedge rst_n)
+begin
     if(~rst_n)
         begin
             cplda_reg_wdata     <= 8'h00;
@@ -374,6 +419,7 @@ always @(posedge clk or negedge rst_n)
         begin
             cplda_reg_wdata     <= cplda_reg_wdata;
         end 
+end
         
 always @(posedge clk or negedge rst_n)
 begin
@@ -400,49 +446,49 @@ begin
     else if(!lbus_reg_we_n)
         begin
             case(cplda_lbus_a[9:0])
-                10'b0000000000: 
-			cpld_test <= ~cplda_reg_wdata;//write cpld test regigster
-                10'b0000001101:                                                                
-			test_mode <= cplda_reg_wdata;//write test mode selection register
-		10'b0000101000:
-			int_mask <= cplda_reg_wdata[3:0];//write int mask register
-                10'b0000101111:                                                                
-			debugging_led <= cplda_reg_wdata;//write debugging led register
-                10'b0000111001:                                                                
-			cpld_tdi <= cplda_reg_wdata[0];//write cpld tdi register
-                10'b0000111011:                                                                
-			cpld_tms <= cplda_reg_wdata[0];//write cpld tms register
-                10'b0000111100:                                                                
-			cpld_tck <= cplda_reg_wdata[0];//write cpld tck register
-                10'b0001000000:                                                                
-			txdis <= cplda_reg_wdata;//write sfp tx disable register
-                10'b0001000001:                                                                
-			led_link <= cplda_reg_wdata;//write led link register
-                10'b0001000010:                                                                
-			led_act <= cplda_reg_wdata;//write led act register
-                10'b0001000011:                                                                
-			jtag_sel <= cplda_reg_wdata[0];//write jtag loading selection register
-                10'b0001000100:                                                                
-			iic_sel <= cplda_reg_wdata;//write SFP IIC selection register
-                10'b0001000101:                                                                
-			dev_id <= cplda_reg_wdata[6:0];//write IIC device ID register
-                10'b0001000110:                                                                
-			add <= cplda_reg_wdata;//write IIC device internal address register
-                10'b0001000111:                                                                
-			command <= cplda_reg_wdata[1:0];//write IIC command register
-                10'b0001001001:                                                                
-			data_out <= cplda_reg_wdata;//write IIC data output register
-                10'b0001001010:                                                                
-			software_wp <= cplda_reg_wdata[0];//write IIC controller protection register
+                ADDR_CPLD_TEST: 
+			cpld_test <= ~cplda_reg_wdata;
+                ADDR_TEST_MODE:                                                                
+			test_mode <= cplda_reg_wdata;
+		            ADDR_INT_MASK:
+			int_mask <= cplda_reg_wdata[3:0];
+                ADDR_DEBUGGING_LED:                                                                
+			debugging_led <= cplda_reg_wdata;
+                ADDR_CPLD_TDI:                                                                
+			cpld_tdi <= cplda_reg_wdata[0];
+                ADDR_CPLD_TMS:                                                                
+			cpld_tms <= cplda_reg_wdata[0];
+                ADDR_CPLD_TCK:                                                                
+			cpld_tck <= cplda_reg_wdata[0];
+                ADDR_TXDIS:                                                                
+			txdis <= cplda_reg_wdata;
+                ADDR_LED_LINK:                                                                
+			led_link <= cplda_reg_wdata;
+                ADDR_LED_ACT:                                                                
+			led_act <= cplda_reg_wdata;
+                ADDR_JTAG_SEL:                                                                
+			jtag_sel <= cplda_reg_wdata[0];
+                ADDR_IIC_SEL:                                                                
+			iic_sel <= cplda_reg_wdata;
+                ADDR_IIC_DEV:                                                                
+			dev_id <= cplda_reg_wdata[6:0];
+                ADDR_IIC_ADDR:                                                                
+			add <= cplda_reg_wdata;
+                ADDR_IIC_COMMAND:                                                                
+			command <= cplda_reg_wdata[1:0];
+                ADDR_IIC_DATA_OUT:                                                                
+			data_out <= cplda_reg_wdata;
+                ADDR_IIC_WP:                                                                
+			software_wp <= cplda_reg_wdata[0];
                 default:
                     begin
-                        iic_sel <= iic_sel;                        
+                        ;                        
                     end                      
             endcase
         end 
     else
         begin
-        iic_sel <= iic_sel;
+        ;
         end                                                    	
 end                                                                    
 
@@ -466,8 +512,6 @@ begin
 		end
 	end
 end
-//----------------------------sfp online status filter end------------
-
 //----------------------------sfp los status filter------------------
 always @ (posedge led_counter or negedge rst_n)
 begin
@@ -488,7 +532,6 @@ begin
 		end
 	end
 end
-//----------------------------sfp los status filter end---------------
 /*********************************************************************
 ------------------ SFP insert or pull signal   ----------------
 *********************************************************************/
@@ -544,6 +587,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp0_inout_n<=1'b1;
     			    end       									    	            
+	        	else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -569,6 +616,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp1_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -594,6 +645,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp2_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -619,6 +674,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp3_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -644,6 +703,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp4_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -669,6 +732,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp5_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -694,6 +761,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp6_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -719,6 +790,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp7_inout_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -744,6 +819,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp0_updown_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -769,6 +848,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp1_updown_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -794,6 +877,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp2_updown_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -819,6 +906,10 @@ always @(posedge clk or negedge rst_n)
     			    begin
     			    	sfp3_updown_n<=1'b1;
     			    end       									    	            
+			else
+			    begin
+				    ;
+			    end
     	        end		    				    
     end
 /*********************************************************************
@@ -827,24 +918,28 @@ always @(posedge clk or negedge rst_n)
 always @(posedge clk or negedge rst_n)
     begin
     	if (rst_n == 1'b0)
-    		begin
-    			sfp4_updown_n   <= 1'b1;			
-    			sfp4_updown_pad1 <= 1'b1;				
-    			sfp4_updown_pad2 <= 1'b1;				
-    		end
+    	begin
+    		sfp4_updown_n   <= 1'b1;			
+    		sfp4_updown_pad1 <= 1'b1;				
+    		sfp4_updown_pad2 <= 1'b1;				
+    	end
     	else
-    		begin												
-    			sfp4_updown_pad1<=fiber_inout_int[4];
-    			sfp4_updown_pad2 <= sfp4_updown_pad1;  
-    			if((sfp4_updown_pad2==1'b1)&&(sfp4_updown_pad1==1'b0))
-    			    begin
-    			        sfp4_updown_n<=1'b0;
-    			    end
-    			else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
-    			    begin
-    			    	sfp4_updown_n<=1'b1;
-    			    end       									    	            
-    	        end		    				    
+    	begin												
+    		sfp4_updown_pad1<=fiber_inout_int[4];
+    		sfp4_updown_pad2 <= sfp4_updown_pad1;  
+    		if((sfp4_updown_pad2==1'b1)&&(sfp4_updown_pad1==1'b0))
+    	        begin
+    		        sfp4_updown_n<=1'b0;
+    	        end
+    		else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
+    	        begin
+    		    	sfp4_updown_n<=1'b1;
+    	        end       									    	            
+		else
+	        begin
+		    ;
+	        end
+       end		    				    
     end
 /*********************************************************************
 ------------------ SFP5 link up or down interrupt   ----------------
@@ -852,24 +947,28 @@ always @(posedge clk or negedge rst_n)
 always @(posedge clk or negedge rst_n)
     begin
     	if (rst_n == 1'b0)
-    		begin
-    			sfp5_updown_n   <= 1'b1;			
-    			sfp5_updown_pad1 <= 1'b1;				
-    			sfp5_updown_pad2 <= 1'b1;				
-    		end
+    	begin
+    		sfp5_updown_n   <= 1'b1;			
+    		sfp5_updown_pad1 <= 1'b1;				
+    		sfp5_updown_pad2 <= 1'b1;				
+    	end
     	else
-    		begin												
-    			sfp5_updown_pad1<=fiber_inout_int[5];
-    			sfp5_updown_pad2 <= sfp5_updown_pad1;  
-    			if((sfp5_updown_pad2==1'b1)&&(sfp5_updown_pad1==1'b0))
-    			    begin
-    			        sfp5_updown_n<=1'b0;
-    			    end
-    			else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
-    			    begin
-    			    	sfp5_updown_n<=1'b1;
-    			    end       									    	            
-    	        end		    				    
+    	begin												
+    		sfp5_updown_pad1<=fiber_inout_int[5];
+    		sfp5_updown_pad2 <= sfp5_updown_pad1;  
+    		if((sfp5_updown_pad2==1'b1)&&(sfp5_updown_pad1==1'b0))
+                begin
+    		        sfp5_updown_n<=1'b0;
+    	        end
+    		else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
+                begin
+    		    	sfp5_updown_n<=1'b1;
+    	        end       									    	            
+		else
+	        begin
+		    ;
+	        end
+        end		    				    
     end
 /*********************************************************************
 ------------------ SFP6 link up or down interrupt   ----------------
@@ -877,24 +976,28 @@ always @(posedge clk or negedge rst_n)
 always @(posedge clk or negedge rst_n)
     begin
     	if (rst_n == 1'b0)
-    		begin
-    			sfp6_updown_n   <= 1'b1;			
-    			sfp6_updown_pad1 <= 1'b1;				
-    			sfp6_updown_pad2 <= 1'b1;				
-    		end
+    	begin
+    		sfp6_updown_n   <= 1'b1;			
+    		sfp6_updown_pad1 <= 1'b1;				
+    		sfp6_updown_pad2 <= 1'b1;				
+    	end
     	else
-    		begin												
-    			sfp6_updown_pad1<=fiber_inout_int[6];
-    			sfp6_updown_pad2 <= sfp6_updown_pad1;  
-    			if((sfp6_updown_pad2==1'b1)&&(sfp6_updown_pad1==1'b0))
-    			    begin
-    			        sfp6_updown_n<=1'b0;
-    			    end
-    			else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
-    			    begin
-    			    	sfp6_updown_n<=1'b1;
-    			    end       									    	            
-    	        end		    				    
+    	begin												
+    		sfp6_updown_pad1<=fiber_inout_int[6];
+    		sfp6_updown_pad2 <= sfp6_updown_pad1;  
+    		if((sfp6_updown_pad2==1'b1)&&(sfp6_updown_pad1==1'b0))
+    	        begin
+    		        sfp6_updown_n<=1'b0;
+    	        end
+    		else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
+    	        begin
+    		    	sfp6_updown_n<=1'b1;
+    	        end       									    	            
+		else
+                begin
+		    ;
+	        end
+        end		    				    
     end
 /*********************************************************************
 ------------------ SFP7 link up or down interrupt   ----------------
@@ -902,24 +1005,28 @@ always @(posedge clk or negedge rst_n)
 always @(posedge clk or negedge rst_n)
     begin
     	if (rst_n == 1'b0)
-    		begin
-    			sfp7_updown_n   <= 1'b1;			
-    			sfp7_updown_pad1 <= 1'b1;				
-    			sfp7_updown_pad2 <= 1'b1;				
-    		end
+   	begin
+    		sfp7_updown_n   <= 1'b1;			
+    		sfp7_updown_pad1 <= 1'b1;				
+    		sfp7_updown_pad2 <= 1'b1;				
+    	end
     	else
-    		begin												
-    			sfp7_updown_pad1<=fiber_inout_int[7];
-    			sfp7_updown_pad2 <= sfp7_updown_pad1;  
-    			if((sfp7_updown_pad2==1'b1)&&(sfp7_updown_pad1==1'b0))
-    			    begin
-    			        sfp7_updown_n<=1'b0;
-    			    end
-    			else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
-    			    begin
-    			    	sfp7_updown_n<=1'b1;
-    			    end       									    	            
-    	        end		    				    
+    	begin												
+    		sfp7_updown_pad1<=fiber_inout_int[7];
+    		sfp7_updown_pad2 <= sfp7_updown_pad1;  
+    		if((sfp7_updown_pad2==1'b1)&&(sfp7_updown_pad1==1'b0))
+                begin
+    		        sfp7_updown_n<=1'b0;
+                end
+    		else if ((int_spca_reg_rc0 ==1'b1)&&(lbus_reg_rd_n == 1'b1))
+    	        begin
+    		    	sfp7_updown_n<=1'b1;
+    	        end       									    	            
+		else
+	        begin
+		    ;
+	        end
+        end		    				    
     end
 //----------------------SFP ABS interrupt------------------
 always @(posedge clk or negedge rst_n)
@@ -952,6 +1059,10 @@ begin
 		if(abs_int_n_reg != 8'hff)
 		begin
 			sfp_abs_n <= 0;
+		end
+		else
+		begin
+			;
 		end
 	end
 end
@@ -987,6 +1098,10 @@ begin
 		begin
 			sfp_los_n <= 0;
 		end
+		else
+		begin
+			;
+		end
 	end
 end
 //------------------------LM80 and ADT75 interrupt---------------
@@ -1008,32 +1123,32 @@ end
 always @(posedge clk or negedge rst_n)
     begin
         if (rst_n==1'b0) 
-            begin
+        begin
                 int_source  <= 4'hf;
                 int_spca_reg_rc0<=1'b0;
 		cplda_lbus_int_n <= 1'b1;
-            end
+        end
         else
-            begin                     
+        begin                     
                 if((cplda_lbus_a[9:0]==10'b0000100111)&&(lbus_reg_rd_n == 1'b0))
 		begin
                         int_spca_reg_rc0 <=1'b1;
 		end
                 else if((int_spca_reg_rc0==1'b1)&&(lbus_reg_rd_n==1'b1))
-                    begin
+                begin
                         int_source <= 4'hf;
                         int_spca_reg_rc0<= 1'b0;
-                    end
+                end
                 else
-                    begin 
+                begin 
                         int_source [0]  <= (int_mask [0] == 1'b1)? lm80_int_n:1'b1; 
                         int_source [1]  <= (int_mask [1] == 1'b1)? adt75_os_n:1'b1; 
                         int_source [2]  <= (int_mask [2] == 1'b1)? sfp_abs_n:1'b1; 
                         int_source [3]  <= (int_mask [3] == 1'b1)? sfp_los_n:1'b1;       
                         int_spca_reg_rc0<= int_spca_reg_rc0;  
 			cplda_lbus_int_n <= (int_source[0] && int_source[1]) && (int_source[2] && int_source[3]);
-                    end            
-            end
+                end            
+        end
     end                                 
 
 //-----------------------JTAG Mode---------------------------------------
@@ -1043,7 +1158,7 @@ begin
 	begin
 		cpld_tdo <= 1'b0;
 	end
-	else if (jtag_sel == 1'b1)
+	else
 	begin
 		cpld_tdo <= tdo;
 	end
@@ -1099,7 +1214,7 @@ iic i2c(
 	.scl(scl),
 	.software_wp(software_wp)
 	);
-bit22timer ledcounter(
+four_hz_timer ledcounter(
 	.clk(clk),
 	.rst_n(rst_n),
 	.timer(led_counter)

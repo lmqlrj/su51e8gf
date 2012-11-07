@@ -32,7 +32,7 @@ leddriver led_out0 (
 	.blink(blink),
 	.link(link[0]),
 	.act(act[0]),
-	.out(led0)
+	.ledout(led0)
 );
 leddriver led_out1 (
 	.clk(clk),
@@ -40,7 +40,7 @@ leddriver led_out1 (
 	.blink(blink),
 	.link(link[1]),
 	.act(act[1]),
-	.out(led1)
+	.ledout(led1)
 );
 leddriver led_out2 (
 	.clk(clk),
@@ -48,7 +48,7 @@ leddriver led_out2 (
 	.blink(blink),
 	.link(link[2]),
 	.act(act[2]),
-	.out(led2)
+	.ledout(led2)
 );
 leddriver led_out3 (
 	.clk(clk),
@@ -56,7 +56,7 @@ leddriver led_out3 (
 	.blink(blink),
 	.link(link[3]),
 	.act(act[3]),
-	.out(led3)
+	.ledout(led3)
 );
 leddriver led_out4 (
 	.clk(clk),
@@ -64,7 +64,7 @@ leddriver led_out4 (
 	.blink(blink),
 	.link(link[4]),
 	.act(act[4]),
-	.out(led4)
+	.ledout(led4)
 );
 leddriver led_out5 (
 	.clk(clk),
@@ -72,7 +72,7 @@ leddriver led_out5 (
 	.blink(blink),
 	.link(link[5]),
 	.act(act[5]),
-	.out(led5)
+	.ledout(led5)
 );
 leddriver led_out6 (
 	.clk(clk),
@@ -80,7 +80,7 @@ leddriver led_out6 (
 	.blink(blink),
 	.link(link[6]),
 	.act(act[6]),
-	.out(led6)
+	.ledout(led6)
 );
 leddriver led_out7 (
 	.clk(clk),
@@ -88,7 +88,7 @@ leddriver led_out7 (
 	.blink(blink),
 	.link(link[7]),
 	.act(act[7]),
-	.out(led7)
+	.ledout(led7)
 );
 endmodule
 module leddriver (
@@ -97,32 +97,32 @@ module leddriver (
 	blink,
 	link,
 	act,
-	out
+	ledout
 );
 input	clk;
 input	rst_n;
 input	blink;
 input	link;
 input	act;
-output	out;
-reg	out;
+output	ledout;
+reg	ledout;
 always @(posedge clk or negedge rst_n)
 begin
 	if(~rst_n)
 	begin
-		out <= 1'b1;
+		ledout <= 1'b1;
 	end
 	else if(link==1'b1)
 	begin
-		out <= 1'b1;
+		ledout <= 1'b1;
 	end
 	else if(act==1'b1)
 	begin
-		out <= 1'b0;
+		ledout <= 1'b0;
 	end
 	else
 	begin
-		out <= blink;
+		ledout <= blink;
 	end
 end
 endmodule

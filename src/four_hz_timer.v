@@ -1,4 +1,4 @@
-module bit22timer (
+module four_hz_timer (
 	clk,
 	rst_n,
 	timer
