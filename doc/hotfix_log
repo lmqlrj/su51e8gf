@@ -2,7 +2,9 @@ hotfix log
 
 
 
-2011.1.8    local_bus: bugfix #900101: probabilistic appearance that write data failed.
+2011.1.8    local_bus: bugfix #900101: sfp is recognized as copper sfp.
+
+that is caused by the failure of writing operation, under some circumstances.
 
                        <--- skew between x and y -->
                     ________________________

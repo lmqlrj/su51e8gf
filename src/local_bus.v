@@ -111,8 +111,8 @@ output  cpld_tms;
 
 reg [7:0]       cplda_reg_rdata ;
 reg [7:0]       cplda_reg_wdata;
-reg [7:0]       cplda_reg_wdata_dly;
-reg             lbus_reg_we_n_delay;                      
+reg             lbus_reg_we_n_delay1;                      
+reg             lbus_reg_we_n_delay2;                      
                  
                 
 reg	[7:0]       cpld_test;             //cpld test register, R/W internal
@@ -148,10 +148,10 @@ wire            cplda_lbus_rdy_n;
 wire lm80_int_bit;
 
 
-parameter       LOGIC_VERSION                 = 8'h05;   //Logic Version Number
+parameter       LOGIC_VERSION                 = 8'h06;   //Logic Version Number
 parameter       LOGIC_DATA_WIDTH              = 8'h00;   //Data Width
-parameter       LOGIC_COMPILING_MONTH         = 8'hac;   //Compiling Year and Month
-parameter       LOGIC_COMPILING_DATE          = 8'h11;   //Compiling Date
+parameter       LOGIC_COMPILING_MONTH         = 8'hb1;   //Compiling Year and Month
+parameter       LOGIC_COMPILING_DATE          = 8'h06;   //Compiling Date
 parameter       PCB_BOARD_VERSION             = 8'h01;   //Pcb Version Number
 parameter       BOARD_MAN_VERSION             = 8'h01;   //Board Version Number
 parameter       BOARD_CONFIG                  = 8'h00;   //Board Configration
@@ -214,7 +214,7 @@ begin
         begin
             cplda_reg_rdata <= 8'h00;
         end
-    else if(!lbus_reg_rd_n)
+    else if(~lbus_reg_rd_n)
         begin
             case(cplda_lbus_a[9:0])
                  ADDR_CPLD_TEST:
@@ -283,20 +283,20 @@ always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)  
         begin   
-            cplda_reg_wdata_dly <= 8'h00;
+            cplda_reg_wdata <= 8'h00;
         end     
     else        
         begin
-            cplda_reg_wdata_dly <= cplda_lbus_d;
+            cplda_reg_wdata <= cplda_lbus_d;
         end
 end
-always @(posedge clk or negedge rst_n)
+/*always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)
         begin
             cplda_reg_wdata     <= 8'h00;
         end
-    else if(!lbus_reg_we_n)
+    else if(~lbus_reg_we_n)
         begin
             cplda_reg_wdata     <= cplda_reg_wdata_dly;
         end
@@ -304,21 +304,23 @@ begin
         begin
             cplda_reg_wdata     <= cplda_reg_wdata;
         end 
-end
+end*/
 
 always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)
         begin
-            lbus_reg_we_n_delay     <= 1'b1;
+            lbus_reg_we_n_delay1     <= 1'b1;
+            lbus_reg_we_n_delay2     <= 1'b1;
         end
     else
         begin
-            lbus_reg_we_n_delay     <= lbus_reg_we_n;
+            lbus_reg_we_n_delay1     <= lbus_reg_we_n;
+            lbus_reg_we_n_delay2     <= lbus_reg_we_n_delay1;
         end
 end
         
-always @(posedge lbus_reg_we_n or negedge rst_n)
+always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)
         begin
@@ -341,7 +343,7 @@ begin
 		software_wp <= 1'b0;
 		two_bytes <= 1'b0;
         end
-    else if((lbus_reg_we_n==1'b1)&&(lbus_reg_we_n_delay==1'b0))
+    else if((lbus_reg_we_n_delay1==1'b1)&&(lbus_reg_we_n_delay2==1'b0))
         begin
             case(cplda_lbus_a[9:0])
                 ADDR_CPLD_TEST: 
