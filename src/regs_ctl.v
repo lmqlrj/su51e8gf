@@ -5,20 +5,20 @@
 //           Copyright(c) 2007, Huawei Technologies Co., Ltd.
 //                        All rights reserved
 //
-// Project      : SPU3SPCA
+// Project      : SU51E8GF
 // File         : regs_ctl.v
-// Author       : s90003029
+// Author       : l90003046
 // Email        : 
 // Version      : 1.0 
 // Module       : regs_ctl
-// Called by    : spu3spca_cpld.V
-// Created      : 2008/12/04
-// Last Modified: 2007/12/xx
+// Called by    : su51e8gf.v
+// Created      : 2010/05/01
+// Last Modified: 2010/08/02
 //------------------------------------------------------------------------------------
 //                           Revision History
 //------------------------------------------------------------------------------------
 // Version      Date(yyyy/mm/dd)   Change Author          Log                             
-//  1.0         2008/12/04         s90003029             create
+//  1.0         2010/05/01         l90003046             create
 //  
 //------------------------------------------------------------------------------------
 //                           Description 
@@ -52,9 +52,9 @@ module regs_ctl(
 		sfp_only_pin,
 		sfp_los_pin,
 		txdis,
-		tx_fault,
+/*		tx_fault,*/
 
-		sda_in,
+/*		sda_in,*/
 		scl0,
 		scl1,
 		scl2,
@@ -95,7 +95,7 @@ input           cplda_lbus_rd_n;
 output          cplda_lbus_rdy_n;  
 output          cplda_lbus_int_n;  
                 
-inout	sda_in;
+/*inout	sda_in;*/
 input	lm80;
 input	adt75;
 output	lm80_reset_n;
@@ -109,7 +109,7 @@ input	board_online_status;
 
 input	[7:0]	sfp_only_pin;//sfp ABS pin
 input	[7:0]	sfp_los_pin;//sfp LOS pin
-input	[7:0]	tx_fault;//sfp tx_fault pin
+/*input	[7:0]	tx_fault;//sfp tx_fault pin*/
 output	[7:0]	txdis;//sfp txdis pin
 
 output	led0;
@@ -144,13 +144,13 @@ reg     [7:0]   cplda_reg_wdata;
 reg     [7:0]   cplda_reg_wdata_dly;                      
                 
 
-reg	[7:0]	data_width;//local bus data width register, read only
-reg	[7:0]	cpld_version;//cpld version register, read only
+//reg	[7:0]	data_width;//local bus data width register, read only
+//reg	[7:0]	cpld_version;//cpld version register, read only
 reg	[7:0]	cpld_test;//cpld test register, read and write
-reg	[7:0]	compiling_month;//cpld compiling month register, read only
-reg	[7:0]	compiling_date;//cpld compiling date register, read only
-reg	[7:0]	pcb_version;//board pcb version register, read only
-reg	[7:0]	board_version;//board version register, read only
+//reg	[7:0]	compiling_month;//cpld compiling month register, read only
+//reg	[7:0]	compiling_date;//cpld compiling date register, read only
+//reg	[7:0]	pcb_version;//board pcb version register, read only
+//reg	[7:0]	board_version;//board version register, read only
 reg	[7:0]	board_config;//board configuration register, read only
 reg	[7:0]	board_online;//board online status register, read only
 reg	[7:0]	int_source;//int source register, read only, [7:0] reserved reserved reserved LOS ABS LM75 LM80
@@ -166,15 +166,15 @@ reg	[7:0]	led_link;//link led register, read and write
 reg	[7:0]	led_act;//act led register, read and write
 reg	[7:0]	jtag_sel;//JTAG loading mode selection register, read and write
 reg	[7:0]	iic_sel;//SFP IIC selection register, write only
-reg [7:0]	txfault;
+//reg [7:0]	txfault;
 
 reg	[6:0]	dev_id;
 reg	[7:0]	add;
 reg	[1:0]	command;
 reg	[7:0]	data_out;
 reg	software_wp;
-reg	iic_dir;//1:CPLD->SFP;0:SFP->CPLD
-reg	sda_temp;
+//reg	iic_dir;//1:CPLD->SFP;0:SFP->CPLD
+//reg	sda_temp;
                 
 reg     [7:0]   sfp_only_reg;//sfp online status register
 reg	[7:0]	sfp_only_pad;//sfp online status filter temp
@@ -275,11 +275,21 @@ wire	fail;
 wire	busy;
 wire	[7:0]	data_in;
 wire	scl;
+wire	sda;
+
+wire	scl0;
+wire	scl1;
+wire	scl2;
+wire	scl3;
+wire	scl4;
+wire	scl5;
+wire	scl6;
+wire	scl7;
 
 parameter   LOGIC_VERSION = 8'h01;   //Logic Version Number
 parameter   LOGIC_DATA_WIDTH = 8'h00;   //Data Width
-parameter   LOGIC_COMPILING_MONTH = 8'ha4;   //Compiling Year and Month
-parameter   LOGIC_COMPILING_DATE = 8'h0f;   //Compiling Date
+parameter   LOGIC_COMPILING_MONTH = 8'ha8;   //Compiling Year and Month
+parameter   LOGIC_COMPILING_DATE = 8'h03;   //Compiling Date
 parameter   PCB_BOARD_VERSION = 8'h01;   //Pcb Version Number
 parameter   BOARD_MAN_VERSION = 8'h01;   //Board Version Number
 
@@ -287,22 +297,22 @@ assign  lbus_reg_rd_n = cplda_lbus_cs_n || cplda_lbus_rd_n;
 assign  lbus_reg_we_n = cplda_lbus_cs_n || cplda_lbus_wr_n;
 assign	cplda_lbus_rdy_n = (lbus_reg_rd_n && lbus_reg_we_n)?1'bz:0;
 assign	lm80_reset_n = rst_n;
-assign	led_test0 = (debugging_led[7:0] == 8'h01)?led_counter:debugging_led[0];
+assign	led_test0 = led_counter;
 assign	jtag_con = jtag_sel[0];
 assign	jtag_sys = ~jtag_con;
 assign	tck = cpld_tck[0];
 assign	tdi = cpld_tdi[0];
 assign	tms = cpld_tms[0];
-assign	scl0 = (iic_sel == 8'h01)?scl:1'bz;
-assign	scl1 = (iic_sel == 8'h02)?scl:1'bz;
-assign	scl2 = (iic_sel == 8'h03)?scl:1'bz;
-assign	scl3 = (iic_sel == 8'h04)?scl:1'bz;
-assign	scl4 = (iic_sel == 8'h05)?scl:1'bz;
-assign	scl5 = (iic_sel == 8'h06)?scl:1'bz;
-assign	scl6 = (iic_sel == 8'h07)?scl:1'bz;
-assign	scl7 = (iic_sel == 8'h08)?scl:1'bz;
-assign	sda = (iic_dir == 1'b1)?sda_temp:1'bz;//CPLD->SFP
-assign	sda_in = (iic_dir == 1'b0)?sda_temp:1'bz;//SFP->CPLD
+assign	scl0 = (iic_sel == 8'h00)?scl:1'bz;
+assign	scl1 = (iic_sel == 8'h01)?scl:1'bz;
+assign	scl2 = (iic_sel == 8'h02)?scl:1'bz;
+assign	scl3 = (iic_sel == 8'h03)?scl:1'bz;
+assign	scl4 = (iic_sel == 8'h04)?scl:1'bz;
+assign	scl5 = (iic_sel == 8'h05)?scl:1'bz;
+assign	scl6 = (iic_sel == 8'h06)?scl:1'bz;
+assign	scl7 = (iic_sel == 8'h07)?scl:1'bz;
+/*assign	sda = (iic_dir == 1'b1)?sda_temp:1'bz;//CPLD->SFP
+assign	sda_in = (iic_dir == 1'b0)?sda_temp:1'bz;//SFP->CPLD*/
 
 
 /*********************************************************************
@@ -322,17 +332,17 @@ always @(posedge clk or negedge rst_n)
                  10'b0000000000:
                       cplda_reg_rdata <= cpld_test;//read cpld test register 
                  10'b0000000001:
-                      cplda_reg_rdata <= data_width;//read data width register
+                      cplda_reg_rdata <= LOGIC_DATA_WIDTH;//read data width register
                  10'b0000000010:
-                      cplda_reg_rdata <= cpld_version;//read cpld version register
+                      cplda_reg_rdata <= LOGIC_VERSION;//read cpld version register
                  10'b0000000011:
-                      cplda_reg_rdata <= compiling_month;//read cpld compiling month register
+                      cplda_reg_rdata <= LOGIC_COMPILING_MONTH;//read cpld compiling month register
                  10'b0000000100:
-                      cplda_reg_rdata <= compiling_date;//read cpld compiling date register
+                      cplda_reg_rdata <= LOGIC_COMPILING_DATE;//read cpld compiling date register
                  10'b0000000101:
-                      cplda_reg_rdata <= pcb_version;//read pcb version register
+                      cplda_reg_rdata <= PCB_BOARD_VERSION;//read pcb version register
                  10'b0000000110:
-                      cplda_reg_rdata <= board_version;//read board version register
+                      cplda_reg_rdata <= BOARD_MAN_VERSION;//read board version register
                  10'b0000000111:
                       cplda_reg_rdata <= board_config;//read board configuration register
                  10'b0000001010:
@@ -405,12 +415,12 @@ always @(posedge clk or negedge rst_n)
 begin
     if(~rst_n)
         begin
-		data_width <= LOGIC_DATA_WIDTH;
-		cpld_version <= LOGIC_VERSION;
-		compiling_month <= LOGIC_COMPILING_MONTH;
-		compiling_date <= LOGIC_COMPILING_DATE;
-		pcb_version <= PCB_BOARD_VERSION;
-		board_version <= BOARD_MAN_VERSION;
+//		data_width <= LOGIC_DATA_WIDTH;
+//		cpld_version <= LOGIC_VERSION;
+//		compiling_month <= LOGIC_COMPILING_MONTH;
+//		compiling_date <= LOGIC_COMPILING_DATE;
+//		pcb_version <= PCB_BOARD_VERSION;
+//		board_version <= BOARD_MAN_VERSION;
 		board_config <= 8'hff;
 		test_mode <= 8'b00000011;
 		cpld_test <= 8'b00000000;
@@ -421,7 +431,7 @@ begin
 		int_mask <= 8'hff;
 		led_link <= 8'hff;
 		led_act <= 8'hff;
-		txdis <= 8'hff;
+		txdis <= 8'h00;
 		jtag_sel <= 8'h00;
 		iic_sel <= 8'h00;
 		dev_id <= 7'b0000000;
@@ -429,8 +439,8 @@ begin
 		command <= 2'b00;
 		data_out <= 8'h00;
 		software_wp <= 1'b0;
-		iic_dir <= 1'b0;
-		txfault <= 8'h00;
+//		iic_dir <= 1'b0;
+//		txfault <= 8'h00;
         end
     else if(!lbus_reg_we_n)
         begin
@@ -469,8 +479,8 @@ begin
 			data_out <= cplda_reg_wdata;//write IIC data output register
                 10'b0001001010:                                                                
 			software_wp <= cplda_reg_wdata[0];//write IIC controller protection register
-		10'b0001001101:
-			iic_dir <= cplda_reg_wdata[0];//write IIC data direction register
+//		10'b0001001101:
+//			iic_dir <= cplda_reg_wdata[0];//write IIC data direction register
                 default:
                     begin
                         ;                        
@@ -479,7 +489,7 @@ begin
         end 
     else
         begin
-		txfault <= tx_fault;
+/*		txfault <= tx_fault*/;
         end                                                    	
 end                                                                    
 
@@ -1297,22 +1307,6 @@ begin
 		led_test3 <= led_counter;
 	end*/
 end
-//-----------------------IIC Controller----------------------------------
-always @(posedge clk or negedge rst_n)
-begin
-	if (rst_n == 1'b0)
-	begin
-		sda_temp <= 1'b0;
-	end	
-	else if(iic_dir == 1'b1)
-	begin
-		sda_temp <= sda_in;
-	end
-	else
-	begin
-		sda_temp <= sda;
-	end
-end
 iic i2c(
         .command(command),
         .fail(fail),
@@ -1323,7 +1317,7 @@ iic i2c(
 	.dev_id(dev_id),
 	.clk(clk),
 	.rst_n(rst_n),
-	.sda(sda_in),
+	.sda(sda),
 	.scl(scl),
 	.software_wp(software_wp)
 	);
