@@ -2,6 +2,12 @@ hotfix log
 
 
 
+2011.7.6    bugfix #900102: local bus read failure after upstream logic version update.
+
+the same reason as bug #900100, except that it happens at read operation.
+the fix is similar, driving the data at a single clk edge, not more than one.
+as advised by the developer of upstrean logic version, sampling at the 4th clk edge after rd falling edge at the beginning of read operation is a suitable solution.
+
 2011.1.8    local_bus: bugfix #900101: sfp is recognized as copper sfp.
 
 that is caused by the failure of writing operation, under some circumstances.
