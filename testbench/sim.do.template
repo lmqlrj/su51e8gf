@@ -1,0 +1,25 @@
+vlib <lib_name:work>
+vmap <lib_name:work>
+vlog -work <lib_name:work> <path/to/file/filename.v>
+vsim -L <lib_name:work> <lib_name:work>.<top_module_name> -t 1ns
+add wave sim:/<top_module_name>/<signal_name>
+add wave [-hex] sim:/<top_module_name>/<lower_module_name>/<signal_name>
+
+#clock generation
+force -repeat <clk_cycle> <clk_signal_name> 0 0,1 <clk_cycle/2>
+run <time*1ns>
+
+#differential clock generation
+force -repeat <clk_cycle> <clk_signal_name_p> 0 0,1 <clk_cycle/2>
+force -repeat <clk_cycle> <clk_signal_name_n> 1 0,0 <clk_cycle/2>
+
+#change signal value
+force <singal_name> 1
+run <time*1ns>
+force <signal_name> 0
+run <time*1ns>
+force <signal_name> 2#01010101
+run <time*1ns>
+force <signal_name> 16#EEFF
+run <time*1ns>
+
