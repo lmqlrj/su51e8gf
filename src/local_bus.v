@@ -60,6 +60,7 @@ input           rst_n;
 input           clk; 
 
 input  [9:0]    cplda_lbus_a;           
+reg    [9:0]    cplda_lbus_a_delay;
 inout  [7:0]    cplda_lbus_d;           
 input           cplda_lbus_cs_n;    
 input           cplda_lbus_wr_n;     
@@ -111,8 +112,17 @@ output  cpld_tms;
 
 reg [7:0]       cplda_reg_rdata ;
 reg [7:0]       cplda_reg_wdata;
+reg [7:0]       cplda_reg_wdata_delay;
 reg             lbus_reg_we_n_delay1;                      
-reg             lbus_reg_we_n_delay2;                      
+reg             lbus_reg_we_n_delay2;
+reg             lbus_reg_we_n_delay3;                      
+reg             lbus_reg_we_n_delay4; 
+reg             lbus_reg_rd_n_delay1;
+reg             lbus_reg_rd_n_delay2;                     
+reg             lbus_reg_rd_n_delay3;
+reg             lbus_reg_rd_n_delay4;
+reg reading_abs_int;
+reg reading_los_int;
                  
                 
 reg	[7:0]       cpld_test;             //cpld test register, R/W internal
@@ -122,7 +132,6 @@ reg	[7:0]       debugging_led;         //debugging led control register, R/W con
 reg	[7:0]       test_mode;             //test mode selection register, R/W control
 reg             cpld_tck;              //cpld tck register, W control
 reg             cpld_tdi;              //cpld tdi register, W control
-//reg             cpld_tdo;              //cpld tdo register, R status
 reg             cpld_tms;              //cpld tms register, W control
 reg [7:0]       txdis;                 //sfp tx disable register, R/W control
 reg [7:0]       led_link;              //link led register, R/W control
@@ -136,9 +145,6 @@ reg [1:0]       command;               //IIC Command, W control
 reg [15:0]       data_out;              //IIC Data to Slave, W control
 reg             software_wp;           //IIC Module Write Protection, W control
                  
-//reg sfp_abs_int_bit;                   //SFP Online Interruption flag, R status
-//reg sfp_los_int_bit;                   //SFP LOS Interruption flag, R status
-
 reg             two_bytes;             //IIC two bytes operation flag
 
 wire            lbus_reg_rd_n;
@@ -148,9 +154,9 @@ wire            cplda_lbus_rdy_n;
 wire lm80_int_bit;
 
 
-parameter       LOGIC_VERSION                 = 8'h06;   //Logic Version Number
+parameter       LOGIC_VERSION                 = 8'h09;   //Logic Version Number
 parameter       LOGIC_DATA_WIDTH              = 8'h00;   //Data Width
-parameter       LOGIC_COMPILING_MONTH         = 8'hb1;   //Compiling Year and Month
+parameter       LOGIC_COMPILING_MONTH         = 8'hb7;   //Compiling Year and Month
 parameter       LOGIC_COMPILING_DATE          = 8'h06;   //Compiling Date
 parameter       PCB_BOARD_VERSION             = 8'h01;   //Pcb Version Number
 parameter       BOARD_MAN_VERSION             = 8'h01;   //Board Version Number
@@ -186,7 +192,7 @@ parameter       ADDR_IIC_DATA_OUT             = 10'b0001001001;      //0x49
 parameter       ADDR_IIC_WP                   = 10'b0001001010;      //0x4A
 parameter       ADDR_IIC_FAIL                 = 10'b0001001011;      //0x4B
 parameter       ADDR_IIC_BUSY                 = 10'b0001001100;      //0x4C
-parameter	      ADDR_IIC_BYTE_SEL             = 10'b0001001101;      //0x4D
+parameter       ADDR_IIC_BYTE_SEL             = 10'b0001001101;      //0x4D
 parameter       ADDR_IIC_DATA_IN_HIGH         = 10'b0001001110;      //0x4E
 parameter       ADDR_IIC_DATA_OUT_HIGH        = 10'b0001001111;      //0x4F
 parameter       ADDR_SFP_ONLINE_STATUS        = 10'b0001010000;      //0x50
@@ -196,10 +202,10 @@ parameter       ADDR_SFP_LOS_INT              = 10'b0001010011;      //0x53
 
 assign  lbus_reg_rd_n = cplda_lbus_cs_n || cplda_lbus_rd_n;
 assign  lbus_reg_we_n = cplda_lbus_cs_n || cplda_lbus_wr_n;
-assign	cplda_lbus_rdy_n = (lbus_reg_rd_n && lbus_reg_we_n)?1'bz:0;
+assign	cplda_lbus_rdy_n = (lbus_reg_rd_n && lbus_reg_we_n)?1'bz:1'b0;
 assign  cplda_lbus_int_n = ~((sfp_abs_int_bit|sfp_los_int_bit)|lm80_int_bit);
-assign  reading_abs_int = ((cplda_lbus_a==ADDR_SFP_ONLINE_INT)&&(lbus_reg_rd_n == 1'b0))?1'b1:1'b0;
-assign  reading_los_int = ((cplda_lbus_a==ADDR_SFP_LOS_INT)&&(lbus_reg_rd_n == 1'b0))?1'b1:1'b0;
+//assign  reading_abs_int = ((cplda_lbus_a==ADDR_SFP_ONLINE_INT)&&(lbus_reg_rd_n == 1'b0))?1'b1:1'b0;
+//assign  reading_los_int = ((cplda_lbus_a==ADDR_SFP_LOS_INT)&&(lbus_reg_rd_n == 1'b0))?1'b1:1'b0;
 assign  lm80_int_bit = ~(int_mask[2]|lm80);
 
 /*********************************************************************
@@ -213,10 +219,12 @@ begin
     if(~rst_n)
         begin
             cplda_reg_rdata <= 8'h00;
+	    reading_abs_int <= 1'b0;
+	    reading_los_int <= 1'b0;
         end
-    else if(~lbus_reg_rd_n)
+    else if((lbus_reg_rd_n_delay4==1'b1)&&(lbus_reg_rd_n_delay3==1'b0))
         begin
-            case(cplda_lbus_a[9:0])
+            case(cplda_lbus_a_delay[9:0])
                  ADDR_CPLD_TEST:
                       cplda_reg_rdata <= cpld_test;
                  ADDR_DATA_WIDTH:
@@ -264,15 +272,28 @@ begin
                  ADDR_SFP_LOS_STATUS: 
                       cplda_reg_rdata <= sfp_los_pin;
                  ADDR_SFP_ONLINE_INT: 
+		 begin
                       cplda_reg_rdata <= ~sfp_inout_int;
+	              reading_abs_int <= 1'b1;
+	         end
                  ADDR_SFP_LOS_INT: 
+		 begin
                       cplda_reg_rdata <= ~fiber_inout_int;
+	              reading_los_int <= 1'b1;
+	         end
                  default:
+		 begin
                       cplda_reg_rdata <= 8'h00;
+		      reading_abs_int <= 1'b0;
+		      reading_los_int <= 1'b0;
+	         end
             endcase
         end
 	else
-		;
+	begin
+		reading_abs_int <= 1'b0;
+		reading_los_int <= 1'b0;
+	end
 end
                 
 /*********************************************************************
@@ -284,27 +305,16 @@ begin
     if(~rst_n)  
         begin   
             cplda_reg_wdata <= 8'h00;
+            cplda_reg_wdata_delay <= 8'h00;
+            cplda_lbus_a_delay <= 10'b0000000000;
         end     
     else        
         begin
             cplda_reg_wdata <= cplda_lbus_d;
+            cplda_reg_wdata_delay <= cplda_reg_wdata;
+            cplda_lbus_a_delay <= cplda_lbus_a;
         end
 end
-/*always @(posedge clk or negedge rst_n)
-begin
-    if(~rst_n)
-        begin
-            cplda_reg_wdata     <= 8'h00;
-        end
-    else if(~lbus_reg_we_n)
-        begin
-            cplda_reg_wdata     <= cplda_reg_wdata_dly;
-        end
-    else
-        begin
-            cplda_reg_wdata     <= cplda_reg_wdata;
-        end 
-end*/
 
 always @(posedge clk or negedge rst_n)
 begin
@@ -312,11 +322,23 @@ begin
         begin
             lbus_reg_we_n_delay1     <= 1'b1;
             lbus_reg_we_n_delay2     <= 1'b1;
+            lbus_reg_we_n_delay3     <= 1'b1;
+            lbus_reg_we_n_delay4     <= 1'b1;
+            lbus_reg_rd_n_delay1     <= 1'b1;
+            lbus_reg_rd_n_delay2     <= 1'b1;
+            lbus_reg_rd_n_delay3     <= 1'b1;
+            lbus_reg_rd_n_delay4     <= 1'b1;
         end
     else
         begin
             lbus_reg_we_n_delay1     <= lbus_reg_we_n;
             lbus_reg_we_n_delay2     <= lbus_reg_we_n_delay1;
+            lbus_reg_we_n_delay3     <= lbus_reg_we_n_delay2;
+            lbus_reg_we_n_delay4     <= lbus_reg_we_n_delay3;
+            lbus_reg_rd_n_delay1     <= lbus_reg_rd_n;
+            lbus_reg_rd_n_delay2     <= lbus_reg_rd_n_delay1;
+            lbus_reg_rd_n_delay3     <= lbus_reg_rd_n_delay2;
+            lbus_reg_rd_n_delay4     <= lbus_reg_rd_n_delay3;
         end
 end
         
@@ -343,47 +365,47 @@ begin
 		software_wp <= 1'b0;
 		two_bytes <= 1'b0;
         end
-    else if((lbus_reg_we_n_delay1==1'b1)&&(lbus_reg_we_n_delay2==1'b0))
+    else if((lbus_reg_we_n_delay4==1'b1)&&(lbus_reg_we_n_delay3==1'b0))
         begin
-            case(cplda_lbus_a[9:0])
+            case(cplda_lbus_a_delay[9:0])
                 ADDR_CPLD_TEST: 
-			cpld_test <= ~cplda_reg_wdata;
+			cpld_test <= ~cplda_reg_wdata_delay;
                 ADDR_TEST_MODE:                                                                
-			test_mode <= cplda_reg_wdata;
+			test_mode <= cplda_reg_wdata_delay;
 		ADDR_INT_MASK:
-			int_mask <= cplda_reg_wdata[2:0];
+			int_mask <= cplda_reg_wdata_delay[2:0];
                 ADDR_DEBUGGING_LED:                                                                
-			debugging_led <= cplda_reg_wdata;
+			debugging_led <= cplda_reg_wdata_delay;
                 ADDR_CPLD_TDI:                                                                
-			cpld_tdi <= cplda_reg_wdata[0];
+			cpld_tdi <= cplda_reg_wdata_delay[0];
                 ADDR_CPLD_TMS:                                                                
-			cpld_tms <= cplda_reg_wdata[0];
+			cpld_tms <= cplda_reg_wdata_delay[0];
                 ADDR_CPLD_TCK:                                                                
-			cpld_tck <= cplda_reg_wdata[0];
+			cpld_tck <= cplda_reg_wdata_delay[0];
                 ADDR_TXDIS:                                                                
-			txdis <= cplda_reg_wdata;
+			txdis <= cplda_reg_wdata_delay;
                 ADDR_LED_LINK:                                                                
-			led_link <= cplda_reg_wdata;
+			led_link <= cplda_reg_wdata_delay;
                 ADDR_LED_ACT:                                                                
-			led_act <= cplda_reg_wdata;
+			led_act <= cplda_reg_wdata_delay;
                 ADDR_JTAG_SEL:                                                                
-			jtag_sel <= cplda_reg_wdata[0];
+			jtag_sel <= cplda_reg_wdata_delay[0];
                 ADDR_IIC_SEL:                                                                
-			iic_sel <= cplda_reg_wdata;
+			iic_sel <= cplda_reg_wdata_delay;
                 ADDR_IIC_DEV:                                                                
-			dev_id <= cplda_reg_wdata[6:0];
+			dev_id <= cplda_reg_wdata_delay[6:0];
                 ADDR_IIC_ADDR:                                                                
-			add <= cplda_reg_wdata;
+			add <= cplda_reg_wdata_delay;
                 ADDR_IIC_COMMAND:                                                                
-			command <= cplda_reg_wdata[1:0];
+			command <= cplda_reg_wdata_delay[1:0];
                 ADDR_IIC_DATA_OUT:                                                                
-			data_out[7:0] <= cplda_reg_wdata;
+			data_out[7:0] <= cplda_reg_wdata_delay;
 			          ADDR_IIC_DATA_OUT_HIGH:
-			data_out[15:8] <= cplda_reg_wdata;
+			data_out[15:8] <= cplda_reg_wdata_delay;
                 ADDR_IIC_WP:                                                                
-			software_wp <= cplda_reg_wdata[0];
+			software_wp <= cplda_reg_wdata_delay[0];
 			          ADDR_IIC_BYTE_SEL:
-			two_bytes <= cplda_reg_wdata[0];
+			two_bytes <= cplda_reg_wdata_delay[0];
                 default:
                         ;                        
             endcase
