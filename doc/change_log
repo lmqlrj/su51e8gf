@@ -1,6 +1,15 @@
 change log
 
 
+2011.1.13   interrupt.v: optimize code
+            clk_gen.v: add 200KHz clock generator.
+            iic.v: remove clock generation code.
+            su51e8gf_top.v: extract combination function code to io_ctrl.v.
+            local_bus.v: adjust interface with interrupt module.
+            remove counter.v.
+
+2011.1.12   sfp_ctrl.v: optimize code
+            
 2011.1.6    local_bus.v: bugfix #900101: sfp is recognized as copper sfp.
             iic.v: optimize code.
 
