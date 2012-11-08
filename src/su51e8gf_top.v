@@ -88,14 +88,14 @@ input           cplda_lbus_rd_n;
 output          cplda_lbus_rdy_n;  
 output          cplda_lbus_int_n;  
                 
-input	          lm80;
-output	        lm80_reset_n;
+input             lm80;
+output          lm80_reset_n;
 
-output	        led_test0;
+output          led_test0;
 
-input	[7:0]     sfp_only_pin;          //sfp ABS pin
-input	[7:0]     sfp_los_pin;           //sfp LOS pin
-output	[7:0]   txdis;                 //sfp txdis pin
+input   [7:0]     sfp_only_pin;          //sfp ABS pin
+input   [7:0]     sfp_los_pin;           //sfp LOS pin
+output  [7:0]   txdis;                 //sfp txdis pin
 
 output          led0;
 output          led1;
@@ -146,13 +146,13 @@ wire [7:0]      iic_sel;
                 
 wire            fail;
 wire            busy;
-wire            [15:0]	data_in;
+wire            [15:0]  data_in;
 wire            scl;
 wire            sda;
 wire two_bytes;
 wire software_wp;
 
-wire            clk_100khz;
+wire      counter_5us;
 wire            clk_100hz;
 wire            clk_6hz;
 
@@ -161,24 +161,6 @@ wire            reading_los_int;
 
 wire [7:0] led_link;
 wire [7:0] led_act;
-
-
-
-assign	lm80_reset_n = rst_n;
-assign	led_test0 = clk_6hz;
-assign	jtag_con = jtag_sel;
-assign	jtag_sys = ~jtag_con;
-assign	scl0 = (iic_sel == 8'h00)?scl:1'bz;
-assign	scl1 = (iic_sel == 8'h01)?scl:1'bz;
-assign	scl2 = (iic_sel == 8'h02)?scl:1'bz;
-assign	scl3 = (iic_sel == 8'h03)?scl:1'bz;
-assign	scl4 = (iic_sel == 8'h04)?scl:1'bz;
-assign	scl5 = (iic_sel == 8'h05)?scl:1'bz;
-assign	scl6 = (iic_sel == 8'h06)?scl:1'bz;
-assign	scl7 = (iic_sel == 8'h07)?scl:1'bz;
-
-                              
-
 
 
 lb_reg_ctrl local_bus(
@@ -229,11 +211,6 @@ sfp_ctrl sfp_management(
                 .rst_n(rst_n),                
                 .sfp_only_pin(sfp_only_pin),
                 .sfp_los_pin(sfp_los_pin),
-                .int_mask(int_mask[1:0]),
-                .sfp_inout_int(sfp_inout_int),
-                .fiber_inout_int(fiber_inout_int),                
-                .sfp_los_int_bit(sfp_los_int_bit),
-                .sfp_abs_int_bit(sfp_abs_int_bit),                
                 .sfp_only_reg(sfp_only_reg),
                 .sfp_los_reg(sfp_los_reg)
                 );
@@ -241,89 +218,113 @@ sfp_ctrl sfp_management(
 iic i2c(
         .command(command),
         .fail(fail),
-	.busy(busy),
-	.data_in(data_in),
-	.data_out(data_out),
-	.add(add),
-	.dev_id(dev_id),
-	.clk(clk),
-	.rst_n(rst_n),
-	.sda(sda),
-	.scl(scl),
-	.software_wp(software_wp),
-	.two_bytes(two_bytes),
-	.clk_100khz(clk_100khz)
-	);
-	
+        .busy(busy),
+        .data_in(data_in),
+        .data_out(data_out),
+        .add(add),
+        .dev_id(dev_id),
+        .clk(clk),
+        .rst_n(rst_n),
+        .sda(sda),
+        .scl(scl),
+        .software_wp(software_wp),
+        .two_bytes(two_bytes),
+        .counter_5us(counter_5us)
+        );
+        
 interrupt abs_interruption(
-		.clk(clk),
-		.rst(rst_n),
-		.status(sfp_only_reg),
-		.oping(reading_abs_int),
-		.intreg(sfp_inout_int)
-	);
-	
+                .clk(clk),
+                .rst_n(rst_n),
+                .status(sfp_only_reg),
+                .reading_int(reading_abs_int),
+		.int_mask(int_mask[0]),
+                .intreg(sfp_inout_int),
+		.int_bit(sfp_abs_int_bit)
+        );
+        
 interrupt los_interruption(
-		.clk(clk),
-		.rst(rst_n),
-		.status(sfp_los_reg),
-		.oping(reading_los_int),
-		.intreg(fiber_inout_int)
-	);
-	
-	counter clk_gen(
-	.clk(clk_100khz),
-	.rst(rst_n),
-	.clk_6hz(clk_6hz),
-	.clk_100hz(clk_100hz)
-	);
-	
-	leddriver led_out0 (
-	.blink(clk_6hz),
-	.link(led_link[0]),
-	.act(led_act[0]),
-	.ledout(led0)
+                .clk(clk),
+                .rst_n(rst_n),
+                .status(sfp_los_reg),
+                .reading_int(reading_los_int),
+		.int_mask(int_mask[1]),
+                .intreg(fiber_inout_int),
+		.int_bit(sfp_los_int_bit)
+        );
+        
+        clk_gen clk_generator(
+        .clk(clk),
+        .rst_n(rst_n),
+        .counter_5us(counter_5us),
+        .clk_100hz(clk_100hz),
+        .clk_6hz(clk_6hz)
+        );
+
+        leddriver led_out0 (
+        .blink(clk_6hz),
+        .link(led_link[0]),
+        .act(led_act[0]),
+        .ledout(led0)
 );
 leddriver led_out1 (
-	.blink(clk_6hz),
-	.link(led_link[1]),
-	.act(led_act[1]),
-	.ledout(led1)
+        .blink(clk_6hz),
+        .link(led_link[1]),
+        .act(led_act[1]),
+        .ledout(led1)
 );
 leddriver led_out2 (
-	.blink(clk_6hz),
-	.link(led_link[2]),
-	.act(led_act[2]),
-	.ledout(led2)
+        .blink(clk_6hz),
+        .link(led_link[2]),
+        .act(led_act[2]),
+        .ledout(led2)
 );
 leddriver led_out3 (
-	.blink(clk_6hz),
-	.link(led_link[3]),
-	.act(led_act[3]),
-	.ledout(led3)
+        .blink(clk_6hz),
+        .link(led_link[3]),
+        .act(led_act[3]),
+        .ledout(led3)
 );
 leddriver led_out4 (
-	.blink(clk_6hz),
-	.link(led_link[4]),
-	.act(led_act[4]),
-	.ledout(led4)
+        .blink(clk_6hz),
+        .link(led_link[4]),
+        .act(led_act[4]),
+        .ledout(led4)
 );
 leddriver led_out5 (
-	.blink(clk_6hz),
-	.link(led_link[5]),
-	.act(led_act[5]),
-	.ledout(led5)
+        .blink(clk_6hz),
+        .link(led_link[5]),
+        .act(led_act[5]),
+        .ledout(led5)
 );
 leddriver led_out6 (
-	.blink(clk_6hz),
-	.link(led_link[6]),
-	.act(led_act[6]),
-	.ledout(led6)
+        .blink(clk_6hz),
+        .link(led_link[6]),
+        .act(led_act[6]),
+        .ledout(led6)
 );
 leddriver led_out7 (
-	.blink(clk_6hz),
-	.link(led_link[7]),
-	.act(led_act[7]),
-	.ledout(led7)
+        .blink(clk_6hz),
+        .link(led_link[7]),
+        .act(led_act[7]),
+        .ledout(led7)
+);
+io_ctrl switch(
+	.rst_n(rst_n),
+	.clk_6hz(clk_6hz),
+	.jtag_sel(jtag_sel),
+	.iic_sel(iic_sel),
+	.scl(scl),
+	.lm80_reset_n(lm80_reset_n),
+	.led_test0(led_test0),
+	.jtag_con(jtag_con),
+	.jtag_sys(jtag_sys),
+	.scl0(scl0),
+	.scl1(scl1),
+	.scl2(scl2),
+	.scl3(scl3),
+	.scl4(scl4),
+	.scl5(scl5),
+	.scl6(scl6),
+	.scl7(scl7)
 );
 endmodule
