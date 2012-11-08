@@ -1,7 +1,10 @@
 change log
 
 
-2011.1.13   interrupt.v: optimize code
+2011.1.14   leddriver.v:optimize code.
+            su51e8gf_top.v: adjust interface with led driver module.
+
+2011.1.13   interrupt.v: optimize code.
             clk_gen.v: add 200KHz clock generator.
             iic.v: remove clock generation code.
             su51e8gf_top.v: extract combination function code to io_ctrl.v.

@@ -260,53 +260,18 @@ interrupt los_interruption(
         .clk_6hz(clk_6hz)
         );
 
-        leddriver led_out0 (
+        leddriver led_out (
         .blink(clk_6hz),
-        .link(led_link[0]),
-        .act(led_act[0]),
-        .ledout(led0)
-);
-leddriver led_out1 (
-        .blink(clk_6hz),
-        .link(led_link[1]),
-        .act(led_act[1]),
-        .ledout(led1)
-);
-leddriver led_out2 (
-        .blink(clk_6hz),
-        .link(led_link[2]),
-        .act(led_act[2]),
-        .ledout(led2)
-);
-leddriver led_out3 (
-        .blink(clk_6hz),
-        .link(led_link[3]),
-        .act(led_act[3]),
-        .ledout(led3)
-);
-leddriver led_out4 (
-        .blink(clk_6hz),
-        .link(led_link[4]),
-        .act(led_act[4]),
-        .ledout(led4)
-);
-leddriver led_out5 (
-        .blink(clk_6hz),
-        .link(led_link[5]),
-        .act(led_act[5]),
-        .ledout(led5)
-);
-leddriver led_out6 (
-        .blink(clk_6hz),
-        .link(led_link[6]),
-        .act(led_act[6]),
-        .ledout(led6)
-);
-leddriver led_out7 (
-        .blink(clk_6hz),
-        .link(led_link[7]),
-        .act(led_act[7]),
-        .ledout(led7)
+        .link(led_link),
+        .act(led_act),
+        .ledout0(led0),
+        .ledout1(led1),
+        .ledout2(led2),
+        .ledout3(led3),
+        .ledout4(led4),
+        .ledout5(led5),
+        .ledout6(led6),
+        .ledout7(led7)
 );
 io_ctrl switch(
 	.rst_n(rst_n),
