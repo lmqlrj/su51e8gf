@@ -1,6 +1,8 @@
 change log
 
 
+release version 009
+
 2011.7.6    bugfix #900102: local bus read failure after upstream logic version update.
 
 2011.1.14   leddriver.v: optimize code.
@@ -14,6 +16,8 @@ change log
             remove counter.v.
 
 2011.1.12   sfp_ctrl.v: optimize code
+
+release version 006
             
 2011.1.6    local_bus.v: bugfix #900101: sfp is recognized as copper sfp.
             iic.v: optimize code.
