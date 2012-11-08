@@ -25,7 +25,7 @@ module iic(
 	scl,		//IIC1 scl signal
 	software_wp,     //eeprom write protect signal
 	two_bytes,    //two-byte operation select, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
-	clk_100khz
+	counter_5us
 	);
 
 input	clk;
@@ -40,7 +40,7 @@ input two_bytes;    //two-byte operation select, 1 for two-byte operation, 0 oth
 output	fail;
 output	busy;
 output	[15:0] data_in;    //two-byte read, mod by lumeiquan@2010-9-24
-output clk_100khz;
+input  counter_5us;
 
 output	scl;
 inout	sda;
@@ -58,7 +58,7 @@ reg	write_command;
 reg	flag_iic_fail;
 reg	fail;
 reg	fail2;
-reg	[8:0] cnt_20us;		//statement change recycle
+//reg	[8:0] cnt_20us;		//statement change recycle
 reg	iic_sda_out;
 reg	iic_scl_out;
 reg	[2:0] iic_cnt;		//iic timer,use to clock out&in data(8 bits data)
@@ -70,7 +70,6 @@ reg	[5:0] current_state;
 reg [4:0] prescl_cnt;
 reg sixteen_bits;    //two bytes read or write flag, 1 for two-byte operation, 0 otherwise, mod by lumeiquan@2010-9-24
 reg [7:0] data_in_reg;    //temperory reg for data from IIC device, mod by lumeiquan@2010-9-24
-reg clk_100khz;
 
 
 parameter	YES=1'b1;
@@ -175,7 +174,7 @@ always @ (posedge clk or negedge rst_n)
 //**********************************
 
 //20us counter,use by the state change of state machine
-always @ (posedge clk or negedge rst_n)
+/*always @ (posedge clk or negedge rst_n)
 	begin
 		if (rst_n==0)
 		  begin
@@ -189,7 +188,7 @@ always @ (posedge clk or negedge rst_n)
 			end
 		else
 			cnt_20us<=cnt_20us+1'b1;
-	end
+	end*/
 
 
 
@@ -200,7 +199,7 @@ always @ (posedge clk or negedge rst_n)
 	begin
 		if (rst_n==0)
 				current_state<=PRESTART_WL;
-		else if (cnt_20us==ZERO)
+		else if (counter_5us==1'b1)
 				current_state<=next_state;
 	end
 
@@ -458,7 +457,7 @@ always @ (posedge clk or negedge rst_n)
 				sixteen_bits<=ZERO;    //default one-byte operation, mod by lumeiquan@2010-9-24
 				data_in_reg<=ZERO;    //default one-byte operation, mod by lumeiquan@2010-9-24
 			end
-		else if (cnt_20us==ZERO)
+		else if (counter_5us==1'b1)
 			begin
 				case (current_state)
 					PRESTART_WL:
@@ -678,9 +677,9 @@ always @ (posedge clk or negedge rst_n)
 								3'b000:
 									begin
 										if (iic_sda_in==LOW)
-										  begin                            
+										  //begin                            
 											  ;
-											end                              
+											//end                              
 										else
 											begin
 												flag_iic_fail<=YES;
