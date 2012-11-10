@@ -1,4 +1,6 @@
 # Set default behaviour, in case users don't have core.autocrlf set.
+# on windows, core.autocrlf should be set to true.
+# on Linux/unix/osx, core.autocrlf should be set to input.
 * text=auto
 
 # Explicitly declare text files we want to always be normalized and converted 
