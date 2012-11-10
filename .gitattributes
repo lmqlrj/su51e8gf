@@ -1,15 +1,30 @@
-# Set default behaviour, in case users don't have core.autocrlf set.
 # on windows, core.autocrlf should be set to true.
+# which coverts line endings to LF on commit, and to CRLF on checkout,
+# for all file types that are not specified in this file.
+# it overrides core.eol.
+
 # on Linux/unix/osx, core.autocrlf should be set to input.
+# which converts line endings to LF on commit, and leaves the file intact on checkout.
+
+# Set default behaviour, in case users don't have core.autocrlf set.
+# when text=auto, if git decides the file is text,
+# its line endings are normalize to LF on commit, reguardless of the OS.
 * text=auto
 
 # Explicitly declare text files we want to always be normalized and converted 
-# to native line endings on checkout.
+# to core.eol setting on checkout, which default is native, if core.autocrlf is not true.
 *.c text
 *.h text
+*.v text
+*.do text
 
 # Declare files that will always have CRLF line endings on checkout.
+# these settings override core.autocrlf and any other settings.
 *.sln text eol=crlf
+
+# declare files that will always have LF line endings on commit and checkout.
+# these settings override core.autocrlf and any other settings.
+*.sh text eol=lf
 
 # Denote all files that are truly binary and should not be modified.
 *.png binary
